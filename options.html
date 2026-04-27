@@ -5,78 +5,105 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>B站学习模式守护 - 详细设置</title>
     <style>
+      :root {
+        --bg: #f4f7ff;
+        --panel: #ffffff;
+        --text: #14213b;
+        --sub: #4a6089;
+        --line: #d3ddf0;
+        --line-soft: #e3eaf8;
+        --brand: #2f74e2;
+        --brand-border: #3f8cff;
+        --warn-bg: #fff3dc;
+        --warn-border: #f0c988;
+      }
+
       body {
         margin: 0;
-        background: #f4f7ff;
-        color: #14213b;
+        background: var(--bg);
+        color: var(--text);
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
           "Microsoft YaHei", sans-serif;
       }
+
       .page {
-        max-width: 980px;
+        max-width: 1040px;
         margin: 30px auto;
         padding: 0 20px 40px;
       }
+
       h1 {
         margin: 0 0 10px;
         font-size: 28px;
         line-height: 1.35;
       }
+
       .intro {
         margin: 0 0 18px;
         color: #34486f;
         line-height: 1.7;
       }
+
       .panel {
-        background: #fff;
-        border: 1px solid #d3ddf0;
+        background: var(--panel);
+        border: 1px solid var(--line);
         border-radius: 8px;
         padding: 18px;
       }
+
       .section {
         margin-bottom: 18px;
         padding-bottom: 16px;
-        border-bottom: 1px solid #e3eaf8;
+        border-bottom: 1px solid var(--line-soft);
       }
+
       .section:last-of-type {
         margin-bottom: 0;
         padding-bottom: 0;
         border-bottom: 0;
       }
+
       .section-title {
         margin: 0 0 8px;
         font-size: 17px;
         font-weight: 700;
       }
+
       .desc {
         margin: 0 0 10px;
-        color: #4a6089;
+        color: var(--sub);
         font-size: 13px;
         line-height: 1.7;
       }
+
       .item {
         margin-bottom: 12px;
       }
+
       .item:last-child {
         margin-bottom: 0;
       }
+
       .row {
         display: flex;
         align-items: center;
         gap: 8px;
       }
+
       .label {
         display: block;
         margin: 0 0 6px;
         font-size: 14px;
         font-weight: 600;
       }
+
       .hint {
         margin: 6px 0 0;
         color: #546b95;
         font-size: 12px;
         line-height: 1.6;
       }
+
       textarea,
       input[type="text"],
       input[type="password"],
@@ -91,26 +118,59 @@
         font-size: 14px;
         line-height: 1.4;
         background: #fff;
-        color: #14213b;
+        color: var(--text);
       }
+
       textarea {
         min-height: 120px;
         resize: vertical;
       }
-      input[type="checkbox"] {
+
+      input[type="checkbox"],
+      input[type="radio"] {
         width: 16px;
         height: 16px;
       }
+
       .grid2 {
         display: grid;
         gap: 12px;
         grid-template-columns: 1fr 1fr;
       }
+
       .grid3 {
         display: grid;
         gap: 10px;
         grid-template-columns: 1fr 1fr 1fr;
       }
+
+      .mode-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .mode-card {
+        border: 1px solid #d8e2f7;
+        border-radius: 8px;
+        background: #fbfdff;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .mode-title {
+        font-size: 14px;
+        font-weight: 700;
+      }
+
+      .mode-note {
+        color: #566b95;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
       .time-rule {
         border: 1px solid #d8e2f7;
         border-radius: 8px;
@@ -118,14 +178,17 @@
         margin-bottom: 10px;
         background: #fbfdff;
       }
+
       .time-rule:last-child {
         margin-bottom: 0;
       }
+
       .days {
         display: flex;
         flex-wrap: wrap;
         gap: 8px 10px;
       }
+
       .day {
         display: inline-flex;
         align-items: center;
@@ -133,24 +196,29 @@
         font-size: 12px;
         color: #2f4369;
       }
+
       .rule-actions {
         margin-top: 8px;
         display: flex;
         justify-content: flex-end;
       }
+
       .rule-actions button {
         border: 1px solid #d39ba4;
         background: #fff3f5;
         color: #7e2c39;
       }
+
       .top-actions {
         margin-bottom: 10px;
       }
+
       .actions {
         margin-top: 16px;
         display: flex;
         gap: 10px;
       }
+
       button {
         border: 1px solid #95acd4;
         border-radius: 6px;
@@ -160,29 +228,48 @@
         font-size: 14px;
         cursor: pointer;
       }
+
       button.primary {
-        border-color: #3f8cff;
-        background: #2f74e2;
+        border-color: var(--brand-border);
+        background: var(--brand);
         color: #fff;
       }
+
       .status {
         margin-top: 12px;
         min-height: 22px;
         color: #355184;
       }
+
       .warn {
         margin: 8px 0 0;
         color: #904400;
-        background: #fff3dc;
-        border: 1px solid #f0c988;
+        background: var(--warn-bg);
+        border: 1px solid var(--warn-border);
         border-radius: 6px;
         padding: 8px 10px;
         font-size: 12px;
         line-height: 1.6;
       }
+
+      .placeholder-list {
+        margin: 6px 0 0;
+        color: #445a85;
+        font-size: 12px;
+        line-height: 1.7;
+        word-break: break-word;
+      }
+
+      .custom-overrides {
+        border-top: 1px dashed #d8e2f7;
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+
       @media (max-width: 860px) {
         .grid2,
-        .grid3 {
+        .grid3,
+        .mode-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -192,99 +279,105 @@
     <main class="page">
       <h1>B站学习模式守护 - 详细设置</h1>
       <p class="intro">
-        首页只负责开关功能；这里负责每个功能的详细规则。你可以设置关键词、AI、时间段策略和密码保护。
+        这里统一配置判定模式、动作、AI Prompt、时段策略和密码锁。模式是互斥的：弱模式 / 强模式 / AI模式。
       </p>
 
       <section class="panel">
         <div class="section">
-          <h2 class="section-title">基础拦截</h2>
-          <p class="desc">基础规则是“先屏蔽词，再学习词”。命中屏蔽词直接拦截，未命中再判断学习词。</p>
+          <h2 class="section-title">判定模式与动作</h2>
+          <p class="desc">
+            先选判定模式，再选动作。动作至少开启一个：拦截视频或隐藏封面。
+          </p>
 
-          <div class="item">
-            <label class="row">
-              <input id="enabled" type="checkbox" />
-              <span>启用视频拦截</span>
+          <div class="mode-grid item">
+            <label class="mode-card">
+              <span class="row">
+                <input id="modeWeak" name="mode" type="radio" value="weak" />
+                <span class="mode-title">弱硬判断（weak）</span>
+              </span>
+              <span class="mode-note">仅匹配屏蔽词（黑名单），命中即判为非学习向。</span>
+            </label>
+
+            <label class="mode-card">
+              <span class="row">
+                <input id="modeStrong" name="mode" type="radio" value="strong" />
+                <span class="mode-title">强硬判断（strong）</span>
+              </span>
+              <span class="mode-note">仅匹配学习词（白名单），未命中即判为非学习向。</span>
+            </label>
+
+            <label class="mode-card">
+              <span class="row">
+                <input id="modeAi" name="mode" type="radio" value="ai" />
+                <span class="mode-title">AI判断（ai）</span>
+              </span>
+              <span class="mode-note">由AI判定学习向/非学习向，可叠加“先走屏蔽词过滤”。</span>
             </label>
           </div>
 
           <div class="item">
             <label class="row">
-              <input id="fallbackToMeta" type="checkbox" />
-              <span>标签缺失时，使用标题/分区兜底判定</span>
+              <input id="actionBlockVideo" type="checkbox" />
+              <span>动作：拦截视频（进入视频页时阻断）</span>
             </label>
-            <p class="hint">关闭后，缺少标签的视频会更严格地被拦截。</p>
           </div>
-
-          <div class="item">
-            <label class="label" for="allowKeywords">学习关键词（白名单）</label>
-            <textarea id="allowKeywords"></textarea>
-            <p class="hint">每行一个或逗号分隔。命中后可放行。</p>
-          </div>
-
-          <div class="item">
-            <label class="label" for="blockKeywords">屏蔽关键词（黑名单）</label>
-            <textarea id="blockKeywords"></textarea>
-            <p class="hint">每行一个或逗号分隔。命中后直接拦截。</p>
-          </div>
-        </div>
-
-        <div class="section">
-          <h2 class="section-title">封面隐藏与养号</h2>
-          <p class="desc">封面隐藏用于减少刺激源；自动不感兴趣会尝试帮你做“内容不感兴趣”反馈，减少后续推荐。</p>
 
           <div class="item">
             <label class="row">
-              <input id="hideBlockedCovers" type="checkbox" />
-              <span>启用封面隐藏</span>
+              <input id="actionHideCover" type="checkbox" />
+              <span>动作：隐藏封面（首页/推荐/搜索流中隐藏）</span>
             </label>
           </div>
 
           <div class="item">
             <label class="row">
               <input id="autoNotInterestedEnabled" type="checkbox" />
-              <span>自动标记“不感兴趣”</span>
+              <span>辅助行为：自动标记“不感兴趣”</span>
             </label>
-            <p class="hint">默认关闭。开启后对被隐藏/被拦截视频做最佳努力反馈，页面结构变化时可能偶发失效。</p>
+            <p class="hint">默认关闭。属于尽力执行，页面结构变化时可能偶发失效。</p>
           </div>
         </div>
 
         <div class="section">
-          <h2 class="section-title">AI 辅助判定</h2>
-          <p class="desc">适合无标签或标签不可靠场景。会将标题/分区/标签发送到你提供的模型接口。</p>
+          <h2 class="section-title">关键词库</h2>
+          <p class="desc">
+            弱模式主要用屏蔽词，强模式主要用学习词，AI模式可选前置屏蔽词过滤。
+          </p>
+
+          <div class="item">
+            <label class="label" for="allowKeywords">学习关键词（白名单）</label>
+            <textarea id="allowKeywords"></textarea>
+            <p class="hint">每行一个或逗号分隔。强模式会基于它做放行判定。</p>
+          </div>
+
+          <div class="item">
+            <label class="label" for="blockKeywords">屏蔽关键词（黑名单）</label>
+            <textarea id="blockKeywords"></textarea>
+            <p class="hint">每行一个或逗号分隔。弱模式与AI前置过滤会基于它做拦截判定。</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">AI 判定设置</h2>
+          <p class="desc">
+            AI模式会把标题、分区、标签、UP主等信息传给模型。你可以自定义 Prompt，并通过占位符注入字段。
+          </p>
 
           <div class="item">
             <label class="row">
-              <input id="aiEnabled" type="checkbox" />
-              <span>启用AI判定</span>
+              <input id="aiPreFilterBlockKeywords" type="checkbox" />
+              <span>AI模式先走屏蔽词过滤（命中黑名单直接判非学习向）</span>
             </label>
-          </div>
-
-          <div class="grid2">
-            <div class="item">
-              <label class="row">
-                <input id="aiOnlyWhenNoTag" type="checkbox" />
-                <span>仅无标签时调用AI</span>
-              </label>
-            </div>
-            <div class="item">
-              <label class="row">
-                <input id="aiBlockEnabled" type="checkbox" />
-                <span>AI判定娱乐后执行拦截</span>
-              </label>
-            </div>
-            <div class="item">
-              <label class="row">
-                <input id="aiHideEnabled" type="checkbox" />
-                <span>AI判定娱乐后隐藏封面</span>
-              </label>
-              <p class="hint">需要同时开启“封面隐藏”。</p>
-            </div>
           </div>
 
           <div class="grid2">
             <div class="item">
               <label class="label" for="aiApiUrl">AI API URL</label>
-              <input id="aiApiUrl" type="text" placeholder="例如：https://api.example.com/v1/chat/completions" />
+              <input
+                id="aiApiUrl"
+                type="text"
+                placeholder="例如：https://api.example.com/v1/chat/completions"
+              />
             </div>
             <div class="item">
               <label class="label" for="aiModel">AI Model</label>
@@ -299,11 +392,23 @@
               <input id="aiRequestTimeoutMs" type="number" min="3000" max="30000" step="1000" />
             </div>
           </div>
+
+          <div class="item">
+            <label class="label" for="aiPrompt">AI Prompt 模板</label>
+            <textarea id="aiPrompt"></textarea>
+            <p class="placeholder-list">
+              可用占位符：{{title}} {{partition}} {{tags}} {{owner_name}} {{owner_mid}}
+              {{owner_sign}} {{description}} {{aid}} {{bvid}} {{duration}} {{pubdate}}
+              {{metadata_json}}
+            </p>
+          </div>
         </div>
 
         <div class="section">
           <h2 class="section-title">时段策略</h2>
-          <p class="desc">可按时间段套用不同策略：普通模式、自定义模式、严格模式、完全禁止访问。</p>
+          <p class="desc">
+            已精简为两种：完全禁止访问（block_all）和自定义（custom）。
+          </p>
 
           <div class="item">
             <label class="row">
@@ -316,7 +421,9 @@
             <button id="addTimeRule" type="button">新增时段规则</button>
           </div>
           <div id="timeRulesContainer"></div>
-          <p class="hint">规则支持跨天，例如 22:00 - 06:00。冲突时优先级：完全禁止 > 严格 > 自定义 > 普通。</p>
+          <p class="hint">
+            规则支持跨天（例如 22:00 - 06:00）。冲突时优先级：完全禁止访问 > 自定义；同级按列表顺序优先。
+          </p>
         </div>
 
         <div class="section">

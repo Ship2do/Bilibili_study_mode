@@ -1,6 +1,7 @@
 const statusEl = document.getElementById("status");
 const openOptionsButton = document.getElementById("openOptions");
 const resetButton = document.getElementById("reset");
+const quickModeSelect = document.getElementById("quickMode");
 const toggles = Array.from(document.querySelectorAll("input[type='checkbox'][data-key]"));
 
 let currentSettings = null;
@@ -21,12 +22,34 @@ function sendMessage(message) {
   });
 }
 
+function normalizeMode(mode) {
+  const value = String(mode || "").trim().toLowerCase();
+  if (value === "weak") {
+    return "weak";
+  }
+  if (value === "ai") {
+    return "ai";
+  }
+  return "strong";
+}
+
+function modeLabel(mode) {
+  if (mode === "weak") {
+    return "弱模式";
+  }
+  if (mode === "ai") {
+    return "AI模式";
+  }
+  return "强模式";
+}
+
 function applySettingsToView(settings) {
   currentSettings = settings;
   for (const input of toggles) {
     const key = input.dataset.key;
     input.checked = !!(settings && settings[key] === true);
   }
+  quickModeSelect.value = normalizeMode(settings && settings.mode);
 }
 
 async function loadSettings() {
@@ -98,6 +121,29 @@ for (const input of toggles) {
     showStatus("已保存");
   });
 }
+
+quickModeSelect.addEventListener("change", async () => {
+  if (!currentSettings) {
+    quickModeSelect.value = "strong";
+    return;
+  }
+
+  const nextMode = normalizeMode(quickModeSelect.value);
+  const previousMode = normalizeMode(currentSettings.mode);
+  if (nextMode === previousMode) {
+    return;
+  }
+
+  const previousSettings = { ...currentSettings };
+  const result = await savePatch({ mode: nextMode }, previousSettings);
+  if (!result.ok) {
+    applySettingsToView(previousSettings);
+    showStatus(result.error || "保存失败");
+    return;
+  }
+
+  showStatus(`已切换到${modeLabel(nextMode)}`);
+});
 
 openOptionsButton.addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "OPEN_OPTIONS" });

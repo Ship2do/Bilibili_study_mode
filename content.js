@@ -33,7 +33,7 @@
     cardObserver: null,
     decisionCache: new Map(),
     settings: {
-      hideBlockedCovers: false,
+      actionHideCover: false,
       autoNotInterestedEnabled: false
     },
     notInterestedHandled: new Set()
@@ -135,20 +135,20 @@
     if (response && response.ok && response.settings && typeof response.settings === "object") {
       STATE.settings = {
         ...STATE.settings,
-        hideBlockedCovers: response.settings.hideBlockedCovers === true,
+        actionHideCover: response.settings.actionHideCover === true,
         autoNotInterestedEnabled: response.settings.autoNotInterestedEnabled === true
       };
       return;
     }
     STATE.settings = {
       ...STATE.settings,
-      hideBlockedCovers: false,
+      actionHideCover: false,
       autoNotInterestedEnabled: false
     };
   }
 
   function isCoverHidingEnabled() {
-    return STATE.settings && STATE.settings.hideBlockedCovers === true;
+    return STATE.settings && STATE.settings.actionHideCover === true;
   }
 
   function isAutoNotInterestedEnabled() {
@@ -748,16 +748,7 @@
   }
 
   function shouldHideCard(decision) {
-    if (decision && decision.hideCard === true) {
-      return true;
-    }
-    const blockHits = Array.isArray(decision.matchedBlockKeywords)
-      ? decision.matchedBlockKeywords
-      : [];
-    if (blockHits.length > 0) {
-      return true;
-    }
-    return false;
+    return !!(decision && decision.hideCard === true);
   }
 
   function hideGroup(group, decision) {

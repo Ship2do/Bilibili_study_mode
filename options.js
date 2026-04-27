@@ -1,3 +1,20 @@
+const DEFAULT_AI_PROMPT_TEMPLATE = [
+  "请判断这个B站视频是否属于学习向内容。",
+  "请严格只输出JSON，不要输出任何额外文字。",
+  "JSON格式：{\"is_learning\":true/false,\"confidence\":0到1数字,\"reason\":\"简短原因\"}",
+  "",
+  "标题: {{title}}",
+  "分区: {{partition}}",
+  "标签: {{tags}}",
+  "UP主: {{owner_name}}",
+  "UP主ID: {{owner_mid}}",
+  "UP主签名: {{owner_sign}}",
+  "简介: {{description}}",
+  "BV号: {{bvid}}",
+  "AV号: {{aid}}",
+  "完整元数据(JSON): {{metadata_json}}"
+].join("\n");
+
 const DEFAULT_ALLOW_KEYWORDS = [
   "学习",
   "知识",
@@ -34,18 +51,16 @@ const DEFAULT_BLOCK_KEYWORDS = [
 ];
 
 const DEFAULT_SETTINGS = {
-  enabled: true,
-  fallbackToMeta: true,
+  mode: "strong",
+  actionBlockVideo: true,
+  actionHideCover: false,
   allowKeywords: DEFAULT_ALLOW_KEYWORDS,
   blockKeywords: DEFAULT_BLOCK_KEYWORDS,
-  hideBlockedCovers: false,
-  aiEnabled: false,
-  aiOnlyWhenNoTag: true,
-  aiBlockEnabled: true,
-  aiHideEnabled: false,
+  aiPreFilterBlockKeywords: true,
   aiApiUrl: "",
   aiApiKey: "",
   aiModel: "",
+  aiPrompt: DEFAULT_AI_PROMPT_TEMPLATE,
   aiRequestTimeoutMs: 12000,
   autoNotInterestedEnabled: false,
   timeStrategyEnabled: false,
@@ -64,28 +79,31 @@ const DAY_OPTIONS = [
   { value: 6, label: "周六" }
 ];
 
-const MODE_OPTIONS = [
-  { value: "normal", label: "普通模式（按全局规则）" },
-  { value: "strict", label: "严格模式（自动加严判定）" },
-  { value: "custom", label: "自定义模式（独立配置）" },
+const DECISION_MODE_OPTIONS = [
+  { value: "weak", label: "弱硬判断（仅黑名单）" },
+  { value: "strong", label: "强硬判断（仅白名单）" },
+  { value: "ai", label: "AI判断" }
+];
+
+const TIME_RULE_MODE_OPTIONS = [
+  { value: "custom", label: "自定义" },
   { value: "block_all", label: "完全禁止访问" }
 ];
 
-const enabledInput = document.getElementById("enabled");
-const fallbackToMetaInput = document.getElementById("fallbackToMeta");
-const hideBlockedCoversInput = document.getElementById("hideBlockedCovers");
-const allowKeywordsInput = document.getElementById("allowKeywords");
-const blockKeywordsInput = document.getElementById("blockKeywords");
+const modeInputs = Array.from(document.querySelectorAll("input[name='mode']"));
+const actionBlockVideoInput = document.getElementById("actionBlockVideo");
+const actionHideCoverInput = document.getElementById("actionHideCover");
 const autoNotInterestedEnabledInput = document.getElementById("autoNotInterestedEnabled");
 
-const aiEnabledInput = document.getElementById("aiEnabled");
-const aiOnlyWhenNoTagInput = document.getElementById("aiOnlyWhenNoTag");
-const aiBlockEnabledInput = document.getElementById("aiBlockEnabled");
-const aiHideEnabledInput = document.getElementById("aiHideEnabled");
+const allowKeywordsInput = document.getElementById("allowKeywords");
+const blockKeywordsInput = document.getElementById("blockKeywords");
+
+const aiPreFilterBlockKeywordsInput = document.getElementById("aiPreFilterBlockKeywords");
 const aiApiUrlInput = document.getElementById("aiApiUrl");
 const aiModelInput = document.getElementById("aiModel");
 const aiApiKeyInput = document.getElementById("aiApiKey");
 const aiRequestTimeoutMsInput = document.getElementById("aiRequestTimeoutMs");
+const aiPromptInput = document.getElementById("aiPrompt");
 
 const timeStrategyEnabledInput = document.getElementById("timeStrategyEnabled");
 const addTimeRuleButton = document.getElementById("addTimeRule");
@@ -118,6 +136,25 @@ function sendMessage(message) {
   });
 }
 
+function normalizeDecisionMode(mode) {
+  const value = String(mode || "").trim().toLowerCase();
+  if (value === "weak") {
+    return "weak";
+  }
+  if (value === "ai") {
+    return "ai";
+  }
+  return "strong";
+}
+
+function normalizeRuleMode(mode) {
+  const value = String(mode || "").trim().toLowerCase();
+  if (value === "block_all") {
+    return "block_all";
+  }
+  return "custom";
+}
+
 function uniqueKeywords(raw) {
   const parts = String(raw || "")
     .split(/[\n,，;；]/)
@@ -146,6 +183,27 @@ function randomRuleId() {
   return `rule_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getSelectedMode() {
+  const selected = modeInputs.find((input) => input.checked);
+  return normalizeDecisionMode(selected ? selected.value : "strong");
+}
+
+function setSelectedMode(mode) {
+  const normalized = normalizeDecisionMode(mode);
+  for (const input of modeInputs) {
+    input.checked = input.value === normalized;
+  }
+}
+
 function createEmptyRule() {
   return {
     id: randomRuleId(),
@@ -154,13 +212,12 @@ function createEmptyRule() {
     days: [1, 2, 3, 4, 5],
     start: "09:00",
     end: "18:00",
-    mode: "normal",
+    mode: "custom",
     overrides: {
-      enabled: true,
-      hideBlockedCovers: false,
-      fallbackToMeta: true,
-      aiBlockEnabled: true,
-      aiHideEnabled: false
+      decisionMode: getSelectedMode(),
+      actionBlockVideo: actionBlockVideoInput.checked,
+      actionHideCover: actionHideCoverInput.checked,
+      aiPreFilterBlockKeywords: aiPreFilterBlockKeywordsInput.checked
     }
   };
 }
@@ -177,20 +234,29 @@ function createRuleElement(rule) {
     return `<label class="day"><input type="checkbox" class="rule-day" data-day="${day.value}" ${checked} />${day.label}</label>`;
   }).join("");
 
-  const modeValue = String(rule.mode || "normal");
-  const modeOptions = MODE_OPTIONS.map((item) => {
-    const selected = item.value === modeValue ? "selected" : "";
+  const ruleMode = normalizeRuleMode(rule.mode);
+  const ruleModeOptions = TIME_RULE_MODE_OPTIONS.map((item) => {
+    const selected = item.value === ruleMode ? "selected" : "";
     return `<option value="${item.value}" ${selected}>${item.label}</option>`;
   }).join("");
 
-  const overrides = rule.overrides || {};
-  const isCustom = modeValue === "custom";
+  const overrides = rule.overrides && typeof rule.overrides === "object" ? rule.overrides : {};
+  const decisionMode = normalizeDecisionMode(overrides.decisionMode || "strong");
+  const decisionModeOptions = DECISION_MODE_OPTIONS.map((item) => {
+    const selected = item.value === decisionMode ? "selected" : "";
+    return `<option value="${item.value}" ${selected}>${item.label}</option>`;
+  }).join("");
+
+  const actionBlockVideo = overrides.actionBlockVideo !== false;
+  const actionHideCover = overrides.actionHideCover === true;
+  const aiPreFilterBlockKeywords = overrides.aiPreFilterBlockKeywords !== false;
+  const isCustom = ruleMode === "custom";
 
   wrapper.innerHTML = `
     <div class="grid3">
       <div class="item">
         <label class="label">规则名称</label>
-        <input type="text" class="rule-name" value="${String(rule.name || "").replace(/"/g, "&quot;")}" />
+        <input type="text" class="rule-name" value="${escapeHtml(rule.name || "")}" />
       </div>
       <div class="item">
         <label class="label">开始时间</label>
@@ -201,29 +267,51 @@ function createRuleElement(rule) {
         <input type="time" class="rule-end" value="${normalizeTimeText(rule.end, "18:00")}" />
       </div>
       <div class="item">
-        <label class="row"><input type="checkbox" class="rule-enabled" ${rule.enabled !== false ? "checked" : ""} />启用该时段</label>
+        <label class="row"><input type="checkbox" class="rule-enabled" ${
+          rule.enabled !== false ? "checked" : ""
+        } />启用该时段</label>
       </div>
       <div class="item" style="grid-column: span 2;">
         <label class="label">时段策略</label>
-        <select class="rule-mode">${modeOptions}</select>
+        <select class="rule-mode">${ruleModeOptions}</select>
       </div>
     </div>
-    <div class="custom-overrides" style="display: ${isCustom ? 'block' : 'none'}; border-top: 1px dashed #d8e2f7; padding-top: 10px; margin-top: 10px;">
-      <label class="label">自定义策略：</label>
-      <div class="row" style="margin-bottom: 6px;">
-        <label class="row" style="margin-right:12px;"><input type="checkbox" class="override-enabled" ${overrides.enabled !== false ? "checked" : ""} />启用视频拦截</label>
-        <label class="row" style="margin-right:12px;"><input type="checkbox" class="override-hide-covers" ${overrides.hideBlockedCovers === true ? "checked" : ""} />隐藏被拦截封面</label>
-        <label class="row"><input type="checkbox" class="override-fallback-meta" ${overrides.fallbackToMeta !== false ? "checked" : ""} />无标签时标题分区兜底</label>
+
+    <div class="custom-overrides" style="display: ${isCustom ? "block" : "none"};">
+      <div class="grid2" style="margin-bottom: 8px;">
+        <div class="item">
+          <label class="label">判定模式</label>
+          <select class="override-decision-mode">${decisionModeOptions}</select>
+        </div>
       </div>
-      <div class="row">
-        <label class="row" style="margin-right:12px;"><input type="checkbox" class="override-ai-block" ${overrides.aiBlockEnabled !== false ? "checked" : ""} />AI鉴娱后拦截</label>
-        <label class="row"><input type="checkbox" class="override-ai-hide" ${overrides.aiHideEnabled === true ? "checked" : ""} />AI鉴娱后隐藏封面</label>
+      <div class="row" style="margin-bottom: 6px; flex-wrap: wrap;">
+        <label class="row" style="margin-right: 12px;">
+          <input type="checkbox" class="override-action-block" ${
+            actionBlockVideo ? "checked" : ""
+          } />
+          拦截视频
+        </label>
+        <label class="row" style="margin-right: 12px;">
+          <input type="checkbox" class="override-action-hide" ${
+            actionHideCover ? "checked" : ""
+          } />
+          隐藏封面
+        </label>
+        <label class="row">
+          <input type="checkbox" class="override-ai-prefilter" ${
+            aiPreFilterBlockKeywords ? "checked" : ""
+          } />
+          AI先走屏蔽词过滤
+        </label>
       </div>
+      <p class="hint">自定义时段同样要求至少开启一个动作。</p>
     </div>
+
     <div class="item" style="margin-top: 10px;">
       <label class="label">生效星期</label>
       <div class="days">${dayHtml}</div>
     </div>
+
     <div class="rule-actions">
       <button type="button" class="remove-rule">删除规则</button>
     </div>
@@ -239,7 +327,7 @@ function createRuleElement(rule) {
   if (removeButton) {
     removeButton.addEventListener("click", () => {
       wrapper.remove();
-      if (timeRulesContainer.children.length === 0) {
+      if (!timeRulesContainer.querySelector(".time-rule")) {
         renderTimeRules([]);
       }
     });
@@ -274,23 +362,24 @@ function readTimeRulesFromDom() {
     const enabled = card.querySelector(".rule-enabled")?.checked === true;
     const start = normalizeTimeText(card.querySelector(".rule-start")?.value, "00:00");
     const end = normalizeTimeText(card.querySelector(".rule-end")?.value, "23:59");
-    const mode = String(card.querySelector(".rule-mode")?.value || "normal");
+    const mode = normalizeRuleMode(card.querySelector(".rule-mode")?.value || "custom");
     const days = Array.from(card.querySelectorAll(".rule-day"))
       .filter((input) => input.checked)
       .map((input) => Number(input.dataset.day))
       .filter((num) => Number.isInteger(num) && num >= 0 && num <= 6);
 
-    const overrides = {
-      enabled: card.querySelector(".override-enabled")?.checked !== false,
-      hideBlockedCovers: card.querySelector(".override-hide-covers")?.checked === true,
-      fallbackToMeta: card.querySelector(".override-fallback-meta")?.checked !== false,
-      aiBlockEnabled: card.querySelector(".override-ai-block")?.checked !== false,
-      aiHideEnabled: card.querySelector(".override-ai-hide")?.checked === true
-    };
-
     if (days.length === 0) {
       continue;
     }
+
+    const overrides = {
+      decisionMode: normalizeDecisionMode(
+        card.querySelector(".override-decision-mode")?.value || "strong"
+      ),
+      actionBlockVideo: card.querySelector(".override-action-block")?.checked === true,
+      actionHideCover: card.querySelector(".override-action-hide")?.checked === true,
+      aiPreFilterBlockKeywords: card.querySelector(".override-ai-prefilter")?.checked !== false
+    };
 
     rules.push({
       id,
@@ -298,7 +387,7 @@ function readTimeRulesFromDom() {
       enabled,
       start,
       end,
-      mode: mode,
+      mode,
       overrides,
       days: Array.from(new Set(days)).sort((a, b) => a - b)
     });
@@ -311,20 +400,19 @@ function fillForm(settings) {
   const source = settings || DEFAULT_SETTINGS;
   currentSettings = { ...DEFAULT_SETTINGS, ...source };
 
-  enabledInput.checked = currentSettings.enabled !== false;
-  fallbackToMetaInput.checked = currentSettings.fallbackToMeta !== false;
-  hideBlockedCoversInput.checked = currentSettings.hideBlockedCovers === true;
+  setSelectedMode(currentSettings.mode);
+  actionBlockVideoInput.checked = currentSettings.actionBlockVideo !== false;
+  actionHideCoverInput.checked = currentSettings.actionHideCover === true;
   autoNotInterestedEnabledInput.checked = currentSettings.autoNotInterestedEnabled === true;
+
   allowKeywordsInput.value = (currentSettings.allowKeywords || []).join("\n");
   blockKeywordsInput.value = (currentSettings.blockKeywords || []).join("\n");
 
-  aiEnabledInput.checked = currentSettings.aiEnabled === true;
-  aiOnlyWhenNoTagInput.checked = currentSettings.aiOnlyWhenNoTag !== false;
-  aiBlockEnabledInput.checked = currentSettings.aiBlockEnabled !== false;
-  aiHideEnabledInput.checked = currentSettings.aiHideEnabled === true;
+  aiPreFilterBlockKeywordsInput.checked = currentSettings.aiPreFilterBlockKeywords !== false;
   aiApiUrlInput.value = String(currentSettings.aiApiUrl || "");
   aiModelInput.value = String(currentSettings.aiModel || "");
   aiApiKeyInput.value = String(currentSettings.aiApiKey || "");
+  aiPromptInput.value = String(currentSettings.aiPrompt || DEFAULT_AI_PROMPT_TEMPLATE);
   aiRequestTimeoutMsInput.value = String(
     clampNumber(currentSettings.aiRequestTimeoutMs, 3000, 30000, 12000)
   );
@@ -348,53 +436,78 @@ async function loadSettings() {
   showStatus("设置已加载");
 }
 
+function modeLabel(mode) {
+  if (mode === "weak") {
+    return "弱模式";
+  }
+  if (mode === "ai") {
+    return "AI模式";
+  }
+  return "强模式";
+}
+
 function buildPayload() {
+  const mode = getSelectedMode();
+  const actionBlockVideo = actionBlockVideoInput.checked;
+  const actionHideCover = actionHideCoverInput.checked;
   const allowKeywords = uniqueKeywords(allowKeywordsInput.value);
   const blockKeywords = uniqueKeywords(blockKeywordsInput.value);
   const timeRules = readTimeRulesFromDom();
 
-  if (allowKeywords.length === 0) {
-    return { error: "请至少填写一个学习关键词" };
+  if (!actionBlockVideo && !actionHideCover) {
+    return { error: "请至少开启一个动作：拦截视频或隐藏封面" };
   }
 
-  const payload = {
-    enabled: enabledInput.checked,
-    fallbackToMeta: fallbackToMetaInput.checked,
-    hideBlockedCovers: hideBlockedCoversInput.checked,
-    autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
-    allowKeywords,
-    blockKeywords,
+  if (mode === "strong" && allowKeywords.length === 0) {
+    return { error: "强模式下，请至少填写一个学习关键词" };
+  }
 
-    aiEnabled: aiEnabledInput.checked,
-    aiOnlyWhenNoTag: aiOnlyWhenNoTagInput.checked,
-    aiBlockEnabled: aiBlockEnabledInput.checked,
-    aiHideEnabled: aiHideEnabledInput.checked,
-    aiApiUrl: aiApiUrlInput.value.trim(),
-    aiModel: aiModelInput.value.trim(),
-    aiApiKey: aiApiKeyInput.value.trim(),
-    aiRequestTimeoutMs: clampNumber(aiRequestTimeoutMsInput.value, 3000, 30000, 12000),
+  const aiApiUrl = aiApiUrlInput.value.trim();
+  const aiModel = aiModelInput.value.trim();
+  const aiApiKey = aiApiKeyInput.value.trim();
+  const aiPrompt = aiPromptInput.value.trim() || DEFAULT_AI_PROMPT_TEMPLATE;
+  const aiConfigReady = !!(aiApiUrl && aiModel && aiApiKey);
 
-    timeStrategyEnabled: timeStrategyEnabledInput.checked,
-    timeRules,
+  if (mode === "ai" && !aiConfigReady) {
+    return { error: "AI模式下，请填写 AI API URL、Model、API Key" };
+  }
 
-    focusLockEnabled: focusLockEnabledInput.checked
-  };
-
-  if (payload.timeStrategyEnabled && payload.timeRules.length === 0) {
+  if (timeStrategyEnabledInput.checked && timeRules.length === 0) {
     return { error: "启用时段策略后，请至少添加一条时段规则" };
   }
 
-  if (payload.aiEnabled) {
-    if (!payload.aiApiUrl || !payload.aiModel || !payload.aiApiKey) {
-      return { error: "启用AI时，请填写 API URL、Model、API Key" };
+  for (const rule of timeRules) {
+    if (rule.mode !== "custom") {
+      continue;
     }
-    if (!payload.aiBlockEnabled && !payload.aiHideEnabled) {
-      return { error: "启用AI后，请至少开启一个动作：拦截或隐藏封面" };
+    if (!rule.overrides.actionBlockVideo && !rule.overrides.actionHideCover) {
+      return { error: `时段规则“${rule.name}”至少开启一个动作` };
     }
-    if (payload.aiHideEnabled && !payload.hideBlockedCovers) {
-      return { error: "开启AI封面隐藏前，请先开启“封面隐藏”" };
+    if (rule.overrides.decisionMode === "strong" && allowKeywords.length === 0) {
+      return { error: `时段规则“${rule.name}”使用强模式时，需要至少一个学习关键词` };
+    }
+    if (rule.overrides.decisionMode === "ai" && !aiConfigReady) {
+      return { error: `时段规则“${rule.name}”使用AI模式时，请先填写完整AI配置` };
     }
   }
+
+  const payload = {
+    mode,
+    actionBlockVideo,
+    actionHideCover,
+    autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
+    allowKeywords,
+    blockKeywords,
+    aiPreFilterBlockKeywords: aiPreFilterBlockKeywordsInput.checked,
+    aiApiUrl,
+    aiModel,
+    aiApiKey,
+    aiPrompt,
+    aiRequestTimeoutMs: clampNumber(aiRequestTimeoutMsInput.value, 3000, 30000, 12000),
+    timeStrategyEnabled: timeStrategyEnabledInput.checked,
+    timeRules,
+    focusLockEnabled: focusLockEnabledInput.checked
+  };
 
   const newPassword = String(newPasswordInput.value || "");
   const confirmPassword = String(confirmPasswordInput.value || "");
@@ -423,6 +536,7 @@ function buildPayload() {
   return {
     payload,
     auth,
+    mode,
     allowCount: allowKeywords.length,
     blockCount: blockKeywords.length
   };
@@ -441,7 +555,12 @@ async function saveSettings() {
     auth: built.auth
   });
 
-  if (response && !response.ok && response.code === "PASSWORD_REQUIRED" && !built.auth.unlockPassword) {
+  if (
+    response &&
+    !response.ok &&
+    response.code === "PASSWORD_REQUIRED" &&
+    !built.auth.unlockPassword
+  ) {
     const password = window.prompt("该操作会降低专注度，请输入密码：") || "";
     if (!password) {
       showStatus("已取消输入密码");
@@ -464,7 +583,11 @@ async function saveSettings() {
 
   fillForm(response.settings);
   unlockPasswordInput.value = "";
-  showStatus(`保存成功：学习词 ${built.allowCount} 个，屏蔽词 ${built.blockCount} 个`);
+  showStatus(
+    `保存成功：${modeLabel(built.mode)}，学习词 ${built.allowCount} 个，屏蔽词 ${
+      built.blockCount
+    } 个`
+  );
 }
 
 async function resetSettings() {
@@ -501,8 +624,7 @@ async function resetSettings() {
 }
 
 addTimeRuleButton.addEventListener("click", () => {
-  const hasPlaceholder = !timeRulesContainer.querySelector(".time-rule");
-  if (hasPlaceholder) {
+  if (!timeRulesContainer.querySelector(".time-rule")) {
     timeRulesContainer.innerHTML = "";
   }
   timeRulesContainer.appendChild(createRuleElement(createEmptyRule()));

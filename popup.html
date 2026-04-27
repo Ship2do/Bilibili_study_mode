@@ -7,7 +7,7 @@
     <style>
       body {
         margin: 0;
-        width: 300px;
+        width: 320px;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
           "Microsoft YaHei", sans-serif;
         background: #0f1728;
@@ -35,6 +35,15 @@
       .name {
         font-size: 13px;
         line-height: 1.4;
+      }
+      .mode-select {
+        width: 140px;
+        border: 1px solid #2f3e5d;
+        border-radius: 6px;
+        background: #1a2741;
+        color: #e6eeff;
+        padding: 6px 8px;
+        font-size: 12px;
       }
       .switch {
         width: 42px;
@@ -104,25 +113,26 @@
       <h1>B站学习模式守护</h1>
 
       <div class="feature">
-        <span class="name">视频拦截</span>
+        <span class="name">快速模式</span>
+        <select id="quickMode" class="mode-select">
+          <option value="weak">弱模式（黑名单）</option>
+          <option value="strong">强模式（白名单）</option>
+          <option value="ai">AI模式</option>
+        </select>
+      </div>
+
+      <div class="feature">
+        <span class="name">拦截视频</span>
         <label class="switch">
-          <input type="checkbox" data-key="enabled" />
+          <input type="checkbox" data-key="actionBlockVideo" />
           <span class="slider"></span>
         </label>
       </div>
 
       <div class="feature">
-        <span class="name">封面隐藏</span>
+        <span class="name">隐藏封面</span>
         <label class="switch">
-          <input type="checkbox" data-key="hideBlockedCovers" />
-          <span class="slider"></span>
-        </label>
-      </div>
-
-      <div class="feature">
-        <span class="name">AI判定</span>
-        <label class="switch">
-          <input type="checkbox" data-key="aiEnabled" />
+          <input type="checkbox" data-key="actionHideCover" />
           <span class="slider"></span>
         </label>
       </div>

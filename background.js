@@ -1,6 +1,24 @@
+const DEFAULT_AI_PROMPT_TEMPLATE = [
+  "请判断这个B站视频是否属于学习向内容。",
+  "请严格只输出JSON，不要输出任何额外文字。",
+  "JSON格式：{\"is_learning\":true/false,\"confidence\":0到1数字,\"reason\":\"简短原因\"}",
+  "",
+  "标题: {{title}}",
+  "分区: {{partition}}",
+  "标签: {{tags}}",
+  "UP主: {{owner_name}}",
+  "UP主ID: {{owner_mid}}",
+  "UP主签名: {{owner_sign}}",
+  "简介: {{description}}",
+  "BV号: {{bvid}}",
+  "AV号: {{aid}}",
+  "完整元数据(JSON): {{metadata_json}}"
+].join("\n");
+
 const DEFAULT_SETTINGS = Object.freeze({
-  enabled: true,
-  fallbackToMeta: true,
+  mode: "strong",
+  actionBlockVideo: true,
+  actionHideCover: false,
   allowKeywords: [
     "学习",
     "知识",
@@ -34,14 +52,11 @@ const DEFAULT_SETTINGS = Object.freeze({
     "音乐",
     "vlog"
   ],
-  hideBlockedCovers: false,
-  aiEnabled: false,
-  aiOnlyWhenNoTag: true,
-  aiBlockEnabled: true,
-  aiHideEnabled: false,
+  aiPreFilterBlockKeywords: true,
   aiApiUrl: "",
   aiApiKey: "",
   aiModel: "",
+  aiPrompt: DEFAULT_AI_PROMPT_TEMPLATE,
   aiRequestTimeoutMs: 12000,
   autoNotInterestedEnabled: false,
   timeStrategyEnabled: false,
@@ -87,52 +102,28 @@ function randomId(prefix) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function normalizeMode(mode) {
+function normalizeDecisionMode(mode) {
   const value = String(mode || "").trim().toLowerCase();
-  if (value === "strict") {
-    return "strict";
+  if (value === "weak") {
+    return "weak";
   }
+  if (value === "ai") {
+    return "ai";
+  }
+  return "strong";
+}
+
+function normalizeTimeRuleMode(mode) {
+  const value = String(mode || "").trim().toLowerCase();
   if (value === "block_all") {
     return "block_all";
   }
-  if (value === "custom") {
-    return "custom";
-  }
-  return "normal";
+  return "custom";
 }
 
-function normalizeTimeRules(raw) {
-  const list = Array.isArray(raw) ? raw : [];
-  const normalized = [];
-
-  for (const item of list) {
-    if (!item || typeof item !== "object") {
-      continue;
-    }
-    const days = normalizeWeekDays(item.days);
-    if (days.length === 0) {
-      continue;
-    }
-    const rule = {
-      id: String(item.id || randomId("rule")),
-      name: String(item.name || "").trim() || "未命名时段",
-      enabled: item.enabled !== false,
-      days,
-      start: normalizeTimeText(item.start, "00:00"),
-      end: normalizeTimeText(item.end, "23:59"),
-      mode: normalizeMode(item.mode),
-      overrides: {
-        enabled: item.overrides?.enabled !== false,
-        hideBlockedCovers: item.overrides?.hideBlockedCovers === true,
-        fallbackToMeta: item.overrides?.fallbackToMeta !== false,
-        aiBlockEnabled: item.overrides?.aiBlockEnabled !== false,
-        aiHideEnabled: item.overrides?.aiHideEnabled === true
-      }
-    };
-    normalized.push(rule);
-  }
-
-  return normalized;
+function normalizeAiPrompt(raw) {
+  const text = String(raw || "").trim();
+  return text || DEFAULT_AI_PROMPT_TEMPLATE;
 }
 
 function normalizeKeywords(raw) {
@@ -143,10 +134,134 @@ function normalizeKeywords(raw) {
   return Array.from(new Set(clean));
 }
 
+function normalizeActionValue(value, fallback) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  return fallback === true;
+}
+
+function normalizeRuleOverrides(raw, fallbackSettings) {
+  const source = raw && typeof raw === "object" ? raw : {};
+  const base =
+    fallbackSettings && typeof fallbackSettings === "object"
+      ? fallbackSettings
+      : {
+          mode: DEFAULT_SETTINGS.mode,
+          actionBlockVideo: DEFAULT_SETTINGS.actionBlockVideo,
+          actionHideCover: DEFAULT_SETTINGS.actionHideCover,
+          aiPreFilterBlockKeywords: DEFAULT_SETTINGS.aiPreFilterBlockKeywords
+        };
+
+  const decisionMode = normalizeDecisionMode(source.decisionMode || source.mode || base.mode);
+  const actionBlockVideo = normalizeActionValue(source.actionBlockVideo, base.actionBlockVideo);
+  const actionHideCover = normalizeActionValue(source.actionHideCover, base.actionHideCover);
+  const aiPreFilterBlockKeywords =
+    typeof source.aiPreFilterBlockKeywords === "boolean"
+      ? source.aiPreFilterBlockKeywords
+      : base.aiPreFilterBlockKeywords !== false;
+
+  return {
+    decisionMode,
+    actionBlockVideo,
+    actionHideCover,
+    aiPreFilterBlockKeywords
+  };
+}
+
+function normalizeTimeRules(raw, fallbackSettings) {
+  const list = Array.isArray(raw) ? raw : [];
+  const normalized = [];
+
+  for (const item of list) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const days = normalizeWeekDays(item.days);
+    if (days.length === 0) {
+      continue;
+    }
+
+    const legacyMode = String(item.mode || "").trim().toLowerCase();
+    const mode = normalizeTimeRuleMode(legacyMode);
+
+    const rawOverrides =
+      item.overrides && typeof item.overrides === "object" ? { ...item.overrides } : {};
+
+    if (
+      typeof rawOverrides.actionBlockVideo !== "boolean" &&
+      Object.prototype.hasOwnProperty.call(rawOverrides, "enabled")
+    ) {
+      rawOverrides.actionBlockVideo = rawOverrides.enabled !== false;
+    }
+    if (
+      typeof rawOverrides.actionHideCover !== "boolean" &&
+      Object.prototype.hasOwnProperty.call(rawOverrides, "hideBlockedCovers")
+    ) {
+      rawOverrides.actionHideCover = rawOverrides.hideBlockedCovers === true;
+    }
+    if (
+      typeof rawOverrides.aiPreFilterBlockKeywords !== "boolean" &&
+      Object.prototype.hasOwnProperty.call(rawOverrides, "aiBlockEnabled")
+    ) {
+      rawOverrides.aiPreFilterBlockKeywords = rawOverrides.aiBlockEnabled !== false;
+    }
+
+    let overrideFallback = fallbackSettings;
+    if (legacyMode === "strict") {
+      overrideFallback = {
+        ...fallbackSettings,
+        mode: "strong",
+        actionBlockVideo: true,
+        actionHideCover: true,
+        aiPreFilterBlockKeywords: true
+      };
+      if (typeof rawOverrides.decisionMode !== "string") {
+        rawOverrides.decisionMode = "strong";
+      }
+      if (typeof rawOverrides.actionBlockVideo !== "boolean") {
+        rawOverrides.actionBlockVideo = true;
+      }
+      if (typeof rawOverrides.actionHideCover !== "boolean") {
+        rawOverrides.actionHideCover = true;
+      }
+    }
+
+    const overrides = normalizeRuleOverrides(rawOverrides, overrideFallback);
+    if (mode === "custom" && !overrides.actionBlockVideo && !overrides.actionHideCover) {
+      continue;
+    }
+
+    normalized.push({
+      id: String(item.id || randomId("rule")),
+      name: String(item.name || "").trim() || "未命名时段",
+      enabled: item.enabled !== false,
+      days,
+      start: normalizeTimeText(item.start, "00:00"),
+      end: normalizeTimeText(item.end, "23:59"),
+      mode,
+      overrides
+    });
+  }
+
+  return normalized;
+}
+
+function ensureAtLeastOneAction(settings) {
+  if (settings.actionBlockVideo || settings.actionHideCover) {
+    return settings;
+  }
+  return {
+    ...settings,
+    actionBlockVideo: true
+  };
+}
+
 function normalizeSettings(raw) {
   const source = raw && typeof raw === "object" ? raw : {};
-  const legacyKeywords = normalizeKeywords(source.keywords);
 
+  const legacyKeywords = normalizeKeywords(source.keywords);
   const allowKeywords = normalizeKeywords(source.allowKeywords).length
     ? normalizeKeywords(source.allowKeywords)
     : legacyKeywords.length
@@ -157,42 +272,52 @@ function normalizeSettings(raw) {
     ? normalizeKeywords(source.blockKeywords)
     : [...DEFAULT_SETTINGS.blockKeywords];
 
-  return {
-    enabled: source.enabled !== false,
-    fallbackToMeta: source.fallbackToMeta !== false,
+  const mode = normalizeDecisionMode(source.mode || (source.aiEnabled === true ? "ai" : "strong"));
+
+  const actionBlockVideo = normalizeActionValue(source.actionBlockVideo, source.enabled !== false);
+  const actionHideCover = normalizeActionValue(
+    source.actionHideCover,
+    source.hideBlockedCovers === true
+  );
+
+  const aiPreFilterBlockKeywords =
+    typeof source.aiPreFilterBlockKeywords === "boolean" ? source.aiPreFilterBlockKeywords : true;
+
+  const base = {
+    mode,
+    actionBlockVideo,
+    actionHideCover,
     allowKeywords,
     blockKeywords,
-    hideBlockedCovers: source.hideBlockedCovers === true,
-    aiEnabled: source.aiEnabled === true,
-    aiOnlyWhenNoTag: source.aiOnlyWhenNoTag !== false,
-    aiBlockEnabled: source.aiBlockEnabled !== false,
-    aiHideEnabled: source.aiHideEnabled === true,
+    aiPreFilterBlockKeywords,
     aiApiUrl: String(source.aiApiUrl || "").trim(),
     aiApiKey: String(source.aiApiKey || "").trim(),
     aiModel: String(source.aiModel || "").trim(),
+    aiPrompt: normalizeAiPrompt(source.aiPrompt),
     aiRequestTimeoutMs: clampNumber(source.aiRequestTimeoutMs, 3000, 30000, 12000),
     autoNotInterestedEnabled: source.autoNotInterestedEnabled === true,
     timeStrategyEnabled: source.timeStrategyEnabled === true,
-    timeRules: normalizeTimeRules(source.timeRules),
+    timeRules: [],
     focusLockEnabled: source.focusLockEnabled === true,
     focusLockPasswordHash: String(source.focusLockPasswordHash || "").trim()
   };
+
+  base.timeRules = normalizeTimeRules(source.timeRules, base);
+  return ensureAtLeastOneAction(base);
 }
 
 function cloneDefaultSettings() {
   return {
-    enabled: DEFAULT_SETTINGS.enabled,
-    fallbackToMeta: DEFAULT_SETTINGS.fallbackToMeta,
+    mode: DEFAULT_SETTINGS.mode,
+    actionBlockVideo: DEFAULT_SETTINGS.actionBlockVideo,
+    actionHideCover: DEFAULT_SETTINGS.actionHideCover,
     allowKeywords: [...DEFAULT_SETTINGS.allowKeywords],
     blockKeywords: [...DEFAULT_SETTINGS.blockKeywords],
-    hideBlockedCovers: DEFAULT_SETTINGS.hideBlockedCovers,
-    aiEnabled: DEFAULT_SETTINGS.aiEnabled,
-    aiOnlyWhenNoTag: DEFAULT_SETTINGS.aiOnlyWhenNoTag,
-    aiBlockEnabled: DEFAULT_SETTINGS.aiBlockEnabled,
-    aiHideEnabled: DEFAULT_SETTINGS.aiHideEnabled,
+    aiPreFilterBlockKeywords: DEFAULT_SETTINGS.aiPreFilterBlockKeywords,
     aiApiUrl: DEFAULT_SETTINGS.aiApiUrl,
     aiApiKey: DEFAULT_SETTINGS.aiApiKey,
     aiModel: DEFAULT_SETTINGS.aiModel,
+    aiPrompt: DEFAULT_SETTINGS.aiPrompt,
     aiRequestTimeoutMs: DEFAULT_SETTINGS.aiRequestTimeoutMs,
     autoNotInterestedEnabled: DEFAULT_SETTINGS.autoNotInterestedEnabled,
     timeStrategyEnabled: DEFAULT_SETTINGS.timeStrategyEnabled,
@@ -214,15 +339,19 @@ function toMinuteOfDay(timeText) {
   return hour * 60 + minute;
 }
 
-function timeRuleModeWeight(mode) {
-  if (mode === "block_all") {
-    return 4;
-  }
-  if (mode === "strict") {
+function decisionModeWeight(mode) {
+  if (mode === "strong") {
     return 3;
   }
-  if (mode === "custom") {
+  if (mode === "ai") {
     return 2;
+  }
+  return 1;
+}
+
+function timeRuleModeWeight(mode) {
+  if (mode === "block_all") {
+    return 99;
   }
   return 1;
 }
@@ -237,6 +366,42 @@ function timeRuleDurationMinutes(rule) {
     return end - start;
   }
   return 24 * 60 - start + end;
+}
+
+function ruleStrictnessWeight(rule, baseSettings) {
+  if (!rule || rule.mode === "block_all") {
+    return 24;
+  }
+
+  const fallback =
+    baseSettings && typeof baseSettings === "object" ? baseSettings : DEFAULT_SETTINGS;
+  const overrides = rule.overrides || {};
+
+  const mode = normalizeDecisionMode(overrides.decisionMode || fallback.mode);
+  const actionBlockVideo =
+    typeof overrides.actionBlockVideo === "boolean"
+      ? overrides.actionBlockVideo
+      : fallback.actionBlockVideo;
+  const actionHideCover =
+    typeof overrides.actionHideCover === "boolean"
+      ? overrides.actionHideCover
+      : fallback.actionHideCover;
+  const aiPreFilterBlockKeywords =
+    typeof overrides.aiPreFilterBlockKeywords === "boolean"
+      ? overrides.aiPreFilterBlockKeywords
+      : fallback.aiPreFilterBlockKeywords;
+
+  let score = decisionModeWeight(mode);
+  if (actionBlockVideo) {
+    score += 2;
+  }
+  if (actionHideCover) {
+    score += 1;
+  }
+  if (mode === "ai" && aiPreFilterBlockKeywords) {
+    score += 1;
+  }
+  return score;
 }
 
 function timeRulesStrictnessScore(settings) {
@@ -254,7 +419,7 @@ function timeRulesStrictnessScore(settings) {
       continue;
     }
     const duration = timeRuleDurationMinutes(rule);
-    const weight = timeRuleModeWeight(rule.mode);
+    const weight = ruleStrictnessWeight(rule, settings);
     score += dayCount * duration * weight;
   }
   return score;
@@ -266,41 +431,54 @@ function includesAllKeywords(needles, haystack) {
   return list.every((item) => set.has(String(item)));
 }
 
+function hasNewKeywords(baseKeywords, nextKeywords) {
+  const baseSet = new Set(
+    (Array.isArray(baseKeywords) ? baseKeywords : []).map((item) => String(item))
+  );
+  const nextList = Array.isArray(nextKeywords) ? nextKeywords : [];
+  return nextList.some((item) => !baseSet.has(String(item)));
+}
+
+function modeChangeLessStrict(current, next) {
+  return decisionModeWeight(next.mode) < decisionModeWeight(current.mode);
+}
+
+function keywordChangeLessStrict(current, next) {
+  if (current.mode === "weak") {
+    return !includesAllKeywords(current.blockKeywords, next.blockKeywords);
+  }
+
+  if (current.mode === "strong") {
+    return hasNewKeywords(current.allowKeywords, next.allowKeywords);
+  }
+
+  if (current.mode === "ai") {
+    if (current.aiPreFilterBlockKeywords && !next.aiPreFilterBlockKeywords) {
+      return true;
+    }
+    if (current.aiPreFilterBlockKeywords) {
+      return !includesAllKeywords(current.blockKeywords, next.blockKeywords);
+    }
+  }
+
+  return false;
+}
+
 function isLessStrict(current, next) {
-  if (current.enabled && !next.enabled) {
+  if (current.actionBlockVideo && !next.actionBlockVideo) {
     return true;
   }
-  if (current.hideBlockedCovers && !next.hideBlockedCovers) {
+  if (current.actionHideCover && !next.actionHideCover) {
     return true;
   }
   if (current.autoNotInterestedEnabled && !next.autoNotInterestedEnabled) {
     return true;
   }
 
-  if (current.aiEnabled && !next.aiEnabled) {
+  if (modeChangeLessStrict(current, next)) {
     return true;
   }
-  if (current.aiEnabled && current.aiBlockEnabled && !next.aiBlockEnabled) {
-    return true;
-  }
-  if (current.aiEnabled && current.aiHideEnabled && !next.aiHideEnabled) {
-    return true;
-  }
-  if (current.aiEnabled && !current.aiOnlyWhenNoTag && next.aiOnlyWhenNoTag) {
-    return true;
-  }
-
-  if (!current.fallbackToMeta && next.fallbackToMeta) {
-    return true;
-  }
-
-  if (current.blockKeywords.length > next.blockKeywords.length) {
-    return true;
-  }
-  if (!includesAllKeywords(current.blockKeywords, next.blockKeywords)) {
-    return true;
-  }
-  if (!includesAllKeywords(next.allowKeywords, current.allowKeywords)) {
+  if (keywordChangeLessStrict(current, next)) {
     return true;
   }
 
@@ -347,16 +525,48 @@ async function getSettings() {
   return normalizeSettings(stored.studyGuardSettings);
 }
 
+function validateActions(settings) {
+  if (!settings.actionBlockVideo && !settings.actionHideCover) {
+    throw createFocusError("ACTIONS_REQUIRED", "请至少开启一个动作：拦截视频或隐藏封面");
+  }
+}
+
+function validateTimeRules(rules) {
+  const list = Array.isArray(rules) ? rules : [];
+  for (const rule of list) {
+    if (!rule || rule.mode !== "custom") {
+      continue;
+    }
+    const overrides = rule.overrides || {};
+    if (!overrides.actionBlockVideo && !overrides.actionHideCover) {
+      throw createFocusError(
+        "RULE_ACTIONS_REQUIRED",
+        `时段规则“${rule.name || "未命名时段"}”至少开启一个动作`
+      );
+    }
+  }
+}
+
 async function setSettings(partial, auth) {
   const current = await getSettings();
   const authInfo = auth && typeof auth === "object" ? auth : {};
-  const merged = { ...current, ...(partial && typeof partial === "object" ? partial : {}) };
-  const next = normalizeSettings(merged);
+  const nextSource = {
+    ...current,
+    ...(partial && typeof partial === "object" ? partial : {})
+  };
+
+  if (nextSource.actionBlockVideo === false && nextSource.actionHideCover === false) {
+    throw createFocusError("ACTIONS_REQUIRED", "请至少开启一个动作：拦截视频或隐藏封面");
+  }
+
+  const next = normalizeSettings(nextSource);
+  validateActions(next);
+  validateTimeRules(next.timeRules);
 
   const newPassword = String(authInfo.newPassword || "").trim();
   const unlockPassword = String(authInfo.unlockPassword || "").trim();
-
   const changingPassword = newPassword.length > 0;
+
   if (changingPassword) {
     next.focusLockPasswordHash = await sha256Hex(newPassword);
   } else {
@@ -369,7 +579,10 @@ async function setSettings(partial, auth) {
 
   const lessStrict = isLessStrict(current, next);
   const needUnlock =
-    current.focusLockEnabled && (lessStrict || changingPassword || (current.focusLockPasswordHash && !next.focusLockPasswordHash));
+    current.focusLockEnabled &&
+    (lessStrict ||
+      changingPassword ||
+      (current.focusLockPasswordHash && !next.focusLockPasswordHash));
 
   if (needUnlock) {
     const passed = await verifyPassword(current.focusLockPasswordHash, unlockPassword);
@@ -393,6 +606,7 @@ async function resetSettings(auth) {
       throw createFocusError("PASSWORD_REQUIRED", "重置会降低专注度，请输入密码");
     }
   }
+
   const defaults = cloneDefaultSettings();
   await chrome.storage.sync.set({ studyGuardSettings: defaults });
   clearDecisionCache();
@@ -407,6 +621,8 @@ async function ensureDefaultSettings() {
     return;
   }
   const normalized = normalizeSettings(stored.studyGuardSettings);
+  validateActions(normalized);
+  validateTimeRules(normalized.timeRules);
   await chrome.storage.sync.set({ studyGuardSettings: normalized });
 }
 
@@ -448,18 +664,16 @@ function findMatches(texts, keywords) {
 function settingsFingerprint(settings, context) {
   return JSON.stringify([
     context,
-    settings.enabled,
-    settings.fallbackToMeta,
+    settings.mode,
+    settings.actionBlockVideo,
+    settings.actionHideCover,
     settings.allowKeywords,
     settings.blockKeywords,
-    settings.hideBlockedCovers,
-    settings.aiEnabled,
-    settings.aiOnlyWhenNoTag,
-    settings.aiBlockEnabled,
-    settings.aiHideEnabled,
+    settings.aiPreFilterBlockKeywords,
     settings.aiApiUrl,
     settings.aiModel,
     settings.aiApiKey,
+    settings.aiPrompt,
     settings.aiRequestTimeoutMs,
     settings.timeStrategyEnabled,
     settings.timeRules
@@ -507,6 +721,10 @@ function setCachedDecision(cacheKey, fingerprint, result) {
   });
 }
 
+function createDefaultAiResult() {
+  return { used: false, isLearning: false, confidence: null, reason: "", error: "" };
+}
+
 function enrichDecision(decision, metadata) {
   const matchedAllowKeywords = Array.isArray(decision.matchedAllowKeywords)
     ? decision.matchedAllowKeywords
@@ -515,18 +733,20 @@ function enrichDecision(decision, metadata) {
     ? decision.matchedBlockKeywords
     : [];
   const ai =
-    decision.ai && typeof decision.ai === "object"
-      ? decision.ai
-      : { used: false, isEntertainment: false, reason: "", confidence: null, error: "" };
+    decision.ai && typeof decision.ai === "object" ? decision.ai : createDefaultAiResult();
+
+  const matchedKeywords =
+    matchedBlockKeywords.length > 0 ? matchedBlockKeywords : matchedAllowKeywords;
 
   return {
     allowed: decision.allowed === true,
     hideCard: decision.hideCard === true,
     reason: String(decision.reason || ""),
     blockedBy: String(decision.blockedBy || ""),
+    mode: String(decision.mode || ""),
     matchedAllowKeywords,
     matchedBlockKeywords,
-    matchedKeywords: decision.allowed === true ? matchedAllowKeywords : matchedBlockKeywords,
+    matchedKeywords,
     ai,
     metadata,
     timeRule: decision.timeRule || null
@@ -534,12 +754,7 @@ function enrichDecision(decision, metadata) {
 }
 
 function hasAiConfig(settings) {
-  return !!(
-    settings.aiEnabled &&
-    settings.aiApiUrl &&
-    settings.aiApiKey &&
-    settings.aiModel
-  );
+  return !!(settings.aiApiUrl && settings.aiApiKey && settings.aiModel);
 }
 
 function isRuleActiveAt(rule, date) {
@@ -613,43 +828,37 @@ function buildBlockAllDecision(rule, context) {
     hideCard: context === "card",
     reason: `当前时段“${ruleName}”禁止访问${suffix}`,
     blockedBy: "time_block_all",
+    mode: "time_block_all",
     matchedAllowKeywords: [],
     matchedBlockKeywords: [],
-    ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" },
+    ai: createDefaultAiResult(),
     timeRule: rule || null
   };
 }
 
 function applyRuleToSettings(settings, rule) {
-  if (!rule || (rule.mode !== "strict" && rule.mode !== "custom")) {
+  if (!rule || rule.mode !== "custom") {
     return settings;
   }
 
-  if (rule.mode === "custom") {
-    const overrides = rule.overrides || {};
-    return {
-      ...settings,
-      enabled: typeof overrides.enabled === "boolean" ? overrides.enabled : settings.enabled,
-      hideBlockedCovers: typeof overrides.hideBlockedCovers === "boolean" ? overrides.hideBlockedCovers : settings.hideBlockedCovers,
-      fallbackToMeta: typeof overrides.fallbackToMeta === "boolean" ? overrides.fallbackToMeta : settings.fallbackToMeta,
-      aiBlockEnabled: typeof overrides.aiBlockEnabled === "boolean" ? overrides.aiBlockEnabled : settings.aiBlockEnabled,
-      aiHideEnabled: typeof overrides.aiHideEnabled === "boolean" ? overrides.aiHideEnabled : settings.aiHideEnabled
-    };
-  }
-
-  const next = {
+  const overrides = rule.overrides || {};
+  let next = {
     ...settings,
-    hideBlockedCovers: true,
-    fallbackToMeta: false
+    mode: normalizeDecisionMode(overrides.decisionMode || settings.mode),
+    actionBlockVideo:
+      typeof overrides.actionBlockVideo === "boolean"
+        ? overrides.actionBlockVideo
+        : settings.actionBlockVideo,
+    actionHideCover:
+      typeof overrides.actionHideCover === "boolean"
+        ? overrides.actionHideCover
+        : settings.actionHideCover,
+    aiPreFilterBlockKeywords:
+      typeof overrides.aiPreFilterBlockKeywords === "boolean"
+        ? overrides.aiPreFilterBlockKeywords
+        : settings.aiPreFilterBlockKeywords
   };
-
-  if (hasAiConfig(settings)) {
-    next.aiEnabled = true;
-    next.aiBlockEnabled = true;
-    next.aiHideEnabled = true;
-    next.aiOnlyWhenNoTag = false;
-  }
-
+  next = ensureAtLeastOneAction(next);
   return next;
 }
 
@@ -688,6 +897,12 @@ async function fetchVideoMetadata(videoId) {
     bvid: view.bvid ? String(view.bvid) : "",
     title: view.title ? String(view.title) : "",
     tname: view.tname ? String(view.tname) : "",
+    desc: view.desc ? String(view.desc) : "",
+    duration: Number.isFinite(Number(view.duration)) ? Number(view.duration) : null,
+    pubdate: Number.isFinite(Number(view.pubdate)) ? Number(view.pubdate) : null,
+    ownerName: view.owner && view.owner.name ? String(view.owner.name) : "",
+    ownerMid: view.owner && view.owner.mid ? String(view.owner.mid) : "",
+    ownerSign: view.owner && view.owner.sign ? String(view.owner.sign) : "",
     tags: []
   };
 
@@ -712,127 +927,86 @@ async function fetchVideoMetadata(videoId) {
   return metadata;
 }
 
-function evaluateByKeywords(metadata, settings) {
+function collectKeywordTexts(metadata) {
   const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
-  const allowFromTag = findMatches(tags, settings.allowKeywords);
-  const blockFromTag = findMatches(tags, settings.blockKeywords);
+  return [
+    metadata.title,
+    metadata.tname,
+    metadata.ownerName,
+    metadata.ownerSign,
+    metadata.desc,
+    ...tags
+  ];
+}
 
-  if (blockFromTag.length > 0) {
-    return {
-      allowed: false,
-      hideCard: settings.hideBlockedCovers,
-      reason: `命中屏蔽关键词：${blockFromTag.join("、")}`,
-      blockedBy: "block_keyword",
-      matchedAllowKeywords: [],
-      matchedBlockKeywords: blockFromTag,
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-    };
-  }
-
-  if (tags.length > 0) {
-    if (allowFromTag.length > 0) {
-      return {
-        allowed: true,
-        hideCard: false,
-        reason: `标签命中学习关键词：${allowFromTag.join("、")}`,
-        blockedBy: "",
-        matchedAllowKeywords: allowFromTag,
-        matchedBlockKeywords: [],
-        ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-      };
-    }
-    return {
-      allowed: false,
-      hideCard: false,
-      reason: "视频标签未命中学习关键词",
-      blockedBy: "not_learning",
-      matchedAllowKeywords: [],
-      matchedBlockKeywords: [],
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-    };
-  }
-
-  if (!settings.fallbackToMeta) {
-    return {
-      allowed: false,
-      hideCard: false,
-      reason: "未读取到标签，且未开启标题/分区兜底放行",
-      blockedBy: "no_tag_no_fallback",
-      matchedAllowKeywords: [],
-      matchedBlockKeywords: [],
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-    };
-  }
-
-  const metaTexts = [metadata.tname, metadata.title];
-  const blockFromMeta = findMatches(metaTexts, settings.blockKeywords);
-  if (blockFromMeta.length > 0) {
-    return {
-      allowed: false,
-      hideCard: settings.hideBlockedCovers,
-      reason: `标题/分区命中屏蔽关键词：${blockFromMeta.join("、")}`,
-      blockedBy: "block_keyword",
-      matchedAllowKeywords: [],
-      matchedBlockKeywords: blockFromMeta,
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-    };
-  }
-
-  const allowFromMeta = findMatches(metaTexts, settings.allowKeywords);
-  if (allowFromMeta.length > 0) {
-    return {
-      allowed: true,
-      hideCard: false,
-      reason: `未读取到标签，但标题/分区命中学习关键词：${allowFromMeta.join("、")}`,
-      blockedBy: "",
-      matchedAllowKeywords: allowFromMeta,
-      matchedBlockKeywords: [],
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
-    };
-  }
-
+function createModeDecision(
+  shouldBlock,
+  reason,
+  blockedBy,
+  mode,
+  matchedAllowKeywords,
+  matchedBlockKeywords,
+  ai
+) {
   return {
-    allowed: false,
-    hideCard: false,
-    reason: "未读取到有效标签，且标题/分区未命中学习关键词",
-    blockedBy: "not_learning",
-    matchedAllowKeywords: [],
-    matchedBlockKeywords: [],
-    ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" }
+    shouldBlock: shouldBlock === true,
+    reason: String(reason || ""),
+    blockedBy: String(blockedBy || ""),
+    mode: String(mode || ""),
+    matchedAllowKeywords: Array.isArray(matchedAllowKeywords) ? matchedAllowKeywords : [],
+    matchedBlockKeywords: Array.isArray(matchedBlockKeywords) ? matchedBlockKeywords : [],
+    ai: ai && typeof ai === "object" ? ai : createDefaultAiResult()
   };
 }
 
-function shouldRunAi(metadata, settings, context, keywordDecision) {
-  if (!hasAiConfig(settings)) {
-    return false;
-  }
-  if (settings.aiOnlyWhenNoTag) {
-    const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
-    if (tags.length > 0) {
-      return false;
-    }
-  }
-  if (Array.isArray(keywordDecision.matchedBlockKeywords) && keywordDecision.matchedBlockKeywords.length > 0) {
-    return false;
-  }
-
-  if (context === "card") {
-    if (!settings.hideBlockedCovers || !settings.aiHideEnabled) {
-      return false;
-    }
-    if (keywordDecision.hideCard) {
-      return false;
-    }
-    return true;
+function evaluateWeakMode(metadata, settings) {
+  const blockMatches = findMatches(collectKeywordTexts(metadata), settings.blockKeywords);
+  if (blockMatches.length > 0) {
+    return createModeDecision(
+      true,
+      `弱模式命中屏蔽关键词：${blockMatches.join("、")}`,
+      "weak_block_keyword",
+      "weak",
+      [],
+      blockMatches,
+      createDefaultAiResult()
+    );
   }
 
-  if (!settings.aiBlockEnabled) {
-    return false;
+  return createModeDecision(
+    false,
+    "弱模式未命中屏蔽关键词",
+    "",
+    "weak",
+    [],
+    [],
+    createDefaultAiResult()
+  );
+}
+
+function evaluateStrongMode(metadata, settings) {
+  const allowMatches = findMatches(collectKeywordTexts(metadata), settings.allowKeywords);
+  if (allowMatches.length > 0) {
+    return createModeDecision(
+      false,
+      `强模式命中学习关键词：${allowMatches.join("、")}`,
+      "",
+      "strong",
+      allowMatches,
+      [],
+      createDefaultAiResult()
+    );
   }
-  if (!keywordDecision.allowed) {
-    return false;
-  }
-  return true;
+
+  return createModeDecision(
+    true,
+    "强模式未命中学习关键词",
+    "strong_not_learning",
+    "strong",
+    [],
+    [],
+    createDefaultAiResult()
+  );
 }
 
 function stripCodeFence(text) {
@@ -889,6 +1063,30 @@ function extractTextFromAiResponse(data) {
   return "";
 }
 
+function parseBooleanLike(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value === "number") {
+    if (value === 1) {
+      return true;
+    }
+    if (value === 0) {
+      return false;
+    }
+  }
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "yes", "1", "learning", "study", "allow", "allowed", "pass"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "no", "0", "entertainment", "block", "blocked", "deny"].includes(normalized)) {
+      return false;
+    }
+  }
+  return null;
+}
+
 function parseAiDecisionText(text) {
   const raw = stripCodeFence(text);
   if (!raw) {
@@ -903,66 +1101,125 @@ function parseAiDecisionText(text) {
   }
 
   if (parsed && typeof parsed === "object") {
-    const keys = ["is_entertainment", "isEntertainment", "entertainment"];
-    let value = null;
-    for (const key of keys) {
-      if (typeof parsed[key] === "boolean") {
-        value = parsed[key];
+    const learningKeys = ["is_learning", "isLearning", "learning", "allow", "allowed", "pass"];
+    const entertainmentKeys = ["is_entertainment", "isEntertainment", "entertainment"];
+
+    let isLearning = null;
+    for (const key of learningKeys) {
+      const value = parseBooleanLike(parsed[key]);
+      if (value !== null) {
+        isLearning = value;
         break;
       }
-      if (typeof parsed[key] === "string") {
-        const normalized = parsed[key].trim().toLowerCase();
-        if (["true", "yes", "1"].includes(normalized)) {
-          value = true;
-          break;
-        }
-        if (["false", "no", "0"].includes(normalized)) {
-          value = false;
+    }
+
+    if (isLearning === null) {
+      for (const key of entertainmentKeys) {
+        const value = parseBooleanLike(parsed[key]);
+        if (value !== null) {
+          isLearning = !value;
           break;
         }
       }
     }
 
-    if (value === null) {
-      throw new Error("AI返回未包含 is_entertainment 字段");
+    if (isLearning === null && typeof parsed.decision === "string") {
+      const normalized = parsed.decision.trim().toLowerCase();
+      if (normalized === "learning" || normalized === "study") {
+        isLearning = true;
+      }
+      if (normalized === "entertainment") {
+        isLearning = false;
+      }
+    }
+
+    if (isLearning === null) {
+      throw new Error("AI返回未包含可识别的学习判定字段");
     }
 
     const confidenceNum = Number(parsed.confidence);
     const confidence = Number.isFinite(confidenceNum) ? confidenceNum : null;
-    const reason = String(parsed.reason || parsed.explanation || "").trim();
-    return { isEntertainment: value, confidence, reason };
+    const reason = String(parsed.reason || parsed.explanation || parsed.note || "").trim();
+    return { isLearning, confidence, reason };
   }
 
   const lower = raw.toLowerCase();
+  if (/is[_\s-]*learning[^a-z0-9]*(true|yes|1)/i.test(lower)) {
+    return { isLearning: true, confidence: null, reason: "" };
+  }
+  if (/is[_\s-]*learning[^a-z0-9]*(false|no|0)/i.test(lower)) {
+    return { isLearning: false, confidence: null, reason: "" };
+  }
+
   if (/is[_\s-]*entertainment[^a-z0-9]*(true|yes|1)/i.test(lower)) {
-    return { isEntertainment: true, confidence: null, reason: "" };
+    return { isLearning: false, confidence: null, reason: "" };
   }
   if (/is[_\s-]*entertainment[^a-z0-9]*(false|no|0)/i.test(lower)) {
-    return { isEntertainment: false, confidence: null, reason: "" };
+    return { isLearning: true, confidence: null, reason: "" };
   }
 
   throw new Error("无法解析AI返回结果");
 }
 
-async function callAiJudge(metadata, settings) {
-  const payload = {
+function stringifyPromptValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value);
+}
+
+function buildPromptVariables(metadata) {
+  return {
     title: metadata.title || "",
     partition: metadata.tname || "",
-    tags: Array.isArray(metadata.tags) ? metadata.tags : []
+    tags: Array.isArray(metadata.tags) ? metadata.tags.join("、") : "",
+    owner_name: metadata.ownerName || "",
+    owner_mid: metadata.ownerMid || "",
+    owner_sign: metadata.ownerSign || "",
+    description: metadata.desc || "",
+    aid: metadata.aid || "",
+    bvid: metadata.bvid || "",
+    duration: metadata.duration ?? "",
+    pubdate: metadata.pubdate ?? "",
+    metadata_json: JSON.stringify(metadata, null, 2)
   };
+}
 
-  const systemPrompt =
-    "你是B站视频分类器。请判断视频是否属于娱乐导向（游戏、搞笑、综艺、直播、明星八卦、二次元追番、纯休闲消遣等），而非学习/知识/科普导向。只输出JSON，不要额外文字。JSON格式：{\"is_entertainment\":boolean,\"confidence\":0到1之间数字,\"reason\":\"简短原因\"}";
-  const userPrompt = `请判断以下视频是否为娱乐向内容：\n${JSON.stringify(payload, null, 2)}`;
+function renderPromptTemplate(template, metadata) {
+  const text = normalizeAiPrompt(template);
+  const vars = buildPromptVariables(metadata);
+  return text.replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_match, key) => {
+    if (!Object.prototype.hasOwnProperty.call(vars, key)) {
+      return "";
+    }
+    return stringifyPromptValue(vars[key]);
+  });
+}
 
+async function callAiJudge(metadata, settings) {
+  const userPrompt = renderPromptTemplate(settings.aiPrompt, metadata);
   const body = {
     model: settings.aiModel,
     temperature: 0,
     messages: [
-      { role: "system", content: systemPrompt },
+      {
+        role: "system",
+        content:
+          "你是B站学习内容判定器。你必须基于输入信息判断是否为学习向内容。仅输出JSON，不要输出其它文本。"
+      },
       { role: "user", content: userPrompt }
     ]
   };
+
+  const headers = {
+    "Content-Type": "application/json"
+  };
+  if (settings.aiApiKey) {
+    headers.Authorization = `Bearer ${settings.aiApiKey}`;
+  }
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), settings.aiRequestTimeoutMs);
@@ -970,10 +1227,7 @@ async function callAiJudge(metadata, settings) {
   try {
     const response = await fetch(settings.aiApiUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${settings.aiApiKey}`
-      },
+      headers,
       body: JSON.stringify(body),
       signal: controller.signal
     });
@@ -995,50 +1249,144 @@ async function callAiJudge(metadata, settings) {
   }
 }
 
-async function applyAiDecision(keywordDecision, metadata, settings, context) {
-  if (!shouldRunAi(metadata, settings, context, keywordDecision)) {
-    return keywordDecision;
+async function evaluateAiMode(metadata, settings) {
+  const keywordTexts = collectKeywordTexts(metadata);
+  const blockMatches = findMatches(keywordTexts, settings.blockKeywords);
+
+  if (settings.aiPreFilterBlockKeywords && blockMatches.length > 0) {
+    return createModeDecision(
+      true,
+      `AI模式前置过滤命中屏蔽关键词：${blockMatches.join("、")}`,
+      "ai_prefilter_block_keyword",
+      "ai",
+      [],
+      blockMatches,
+      createDefaultAiResult()
+    );
+  }
+
+  if (!hasAiConfig(settings)) {
+    return createModeDecision(
+      true,
+      "AI模式配置不完整，已按安全策略拦截",
+      "ai_config_missing",
+      "ai",
+      [],
+      blockMatches,
+      {
+        used: false,
+        isLearning: false,
+        confidence: null,
+        reason: "",
+        error: "AI配置不完整"
+      }
+    );
   }
 
   try {
     const aiResult = await callAiJudge(metadata, settings);
-    const next = {
-      ...keywordDecision,
-      ai: {
-        used: true,
-        isEntertainment: aiResult.isEntertainment === true,
-        confidence: aiResult.confidence,
-        reason: aiResult.reason || "",
-        error: ""
-      }
+    const aiInfo = {
+      used: true,
+      isLearning: aiResult.isLearning === true,
+      confidence: aiResult.confidence,
+      reason: aiResult.reason || "",
+      error: ""
     };
 
-    if (aiResult.isEntertainment) {
-      if (context === "page" && settings.aiBlockEnabled) {
-        next.allowed = false;
-        next.blockedBy = "ai_entertainment";
-        next.reason = aiResult.reason
-          ? `AI判定为娱乐向内容：${aiResult.reason}`
-          : "AI判定为娱乐向内容";
-      }
-      if (context === "card" && settings.hideBlockedCovers && settings.aiHideEnabled) {
-        next.hideCard = true;
-      }
+    if (aiResult.isLearning) {
+      return createModeDecision(
+        false,
+        aiResult.reason ? `AI判定为学习向：${aiResult.reason}` : "AI判定为学习向",
+        "",
+        "ai",
+        [],
+        blockMatches,
+        aiInfo
+      );
     }
 
-    return next;
+    return createModeDecision(
+      true,
+      aiResult.reason ? `AI判定为非学习向：${aiResult.reason}` : "AI判定为非学习向",
+      "ai_not_learning",
+      "ai",
+      [],
+      blockMatches,
+      aiInfo
+    );
   } catch (error) {
-    return {
-      ...keywordDecision,
-      ai: {
+    return createModeDecision(
+      true,
+      `AI判定失败，已按安全策略拦截：${String(error.message || error)}`,
+      "ai_error",
+      "ai",
+      [],
+      blockMatches,
+      {
         used: true,
-        isEntertainment: false,
+        isLearning: false,
         confidence: null,
         reason: "",
         error: String(error.message || error)
       }
+    );
+  }
+}
+
+async function evaluateByMode(metadata, settings) {
+  const mode = normalizeDecisionMode(settings.mode);
+  if (mode === "weak") {
+    return evaluateWeakMode(metadata, settings);
+  }
+  if (mode === "ai") {
+    return evaluateAiMode(metadata, settings);
+  }
+  return evaluateStrongMode(metadata, settings);
+}
+
+function applyActions(modeDecision, settings, context) {
+  const normalizedContext = normalizeContext(context);
+  const shouldBlock = modeDecision.shouldBlock === true;
+
+  if (!shouldBlock) {
+    return {
+      allowed: true,
+      hideCard: false,
+      reason: modeDecision.reason,
+      blockedBy: "",
+      mode: modeDecision.mode,
+      matchedAllowKeywords: modeDecision.matchedAllowKeywords,
+      matchedBlockKeywords: modeDecision.matchedBlockKeywords,
+      ai: modeDecision.ai
     };
   }
+
+  const hideCard = normalizedContext === "card" && settings.actionHideCover;
+  const blockPage = normalizedContext === "page" && settings.actionBlockVideo;
+
+  if (!blockPage && normalizedContext === "page") {
+    return {
+      allowed: true,
+      hideCard: false,
+      reason: `${modeDecision.reason}（当前仅启用封面隐藏）`,
+      blockedBy: modeDecision.blockedBy,
+      mode: modeDecision.mode,
+      matchedAllowKeywords: modeDecision.matchedAllowKeywords,
+      matchedBlockKeywords: modeDecision.matchedBlockKeywords,
+      ai: modeDecision.ai
+    };
+  }
+
+  return {
+    allowed: !blockPage,
+    hideCard,
+    reason: modeDecision.reason,
+    blockedBy: modeDecision.blockedBy,
+    mode: modeDecision.mode,
+    matchedAllowKeywords: modeDecision.matchedAllowKeywords,
+    matchedBlockKeywords: modeDecision.matchedBlockKeywords,
+    ai: modeDecision.ai
+  };
 }
 
 function failedDecision(message) {
@@ -1047,9 +1395,10 @@ function failedDecision(message) {
     hideCard: false,
     reason: message,
     blockedBy: "error",
+    mode: "",
     matchedAllowKeywords: [],
     matchedBlockKeywords: [],
-    ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" },
+    ai: createDefaultAiResult(),
     metadata: { title: "", tname: "", tags: [] }
   };
 }
@@ -1065,24 +1414,11 @@ async function checkVideoWithSettings(videoId, settings, context) {
   const effectiveSettings = applyRuleToSettings(settings, activeTimeRule);
 
   if (activeTimeRule && activeTimeRule.mode === "block_all") {
-    return enrichDecision(
-      buildBlockAllDecision(activeTimeRule, normalizedContext),
-      { title: "", tname: "", tags: [] }
-    );
-  }
-
-  if (!settings.enabled) {
-    return {
-      allowed: true,
-      hideCard: false,
-      reason: "扩展开关已关闭",
-      blockedBy: "",
-      matchedAllowKeywords: [],
-      matchedBlockKeywords: [],
-      matchedKeywords: [],
-      ai: { used: false, isEntertainment: false, reason: "", confidence: null, error: "" },
-      metadata: { title: "", tname: "", tags: [] }
-    };
+    return enrichDecision(buildBlockAllDecision(activeTimeRule, normalizedContext), {
+      title: "",
+      tname: "",
+      tags: []
+    });
   }
 
   const timeToken = activeTimeRule
@@ -1103,13 +1439,8 @@ async function checkVideoWithSettings(videoId, settings, context) {
   const task = (async () => {
     try {
       const metadata = await fetchVideoMetadata(videoId);
-      const keywordDecision = evaluateByKeywords(metadata, effectiveSettings);
-      const finalDecision = await applyAiDecision(
-        keywordDecision,
-        metadata,
-        effectiveSettings,
-        normalizedContext
-      );
+      const modeDecision = await evaluateByMode(metadata, effectiveSettings);
+      const finalDecision = applyActions(modeDecision, effectiveSettings, normalizedContext);
       finalDecision.timeRule = activeTimeRule || null;
       const enriched = enrichDecision(finalDecision, metadata);
       setCachedDecision(cacheKey, fingerprint, enriched);
