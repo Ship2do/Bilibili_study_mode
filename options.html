@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>B站学习模式守护 - 详细设置</title>
+    <style>
+      body {
+        margin: 0;
+        background: #f4f7ff;
+        color: #14213b;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+      }
+      .page {
+        max-width: 980px;
+        margin: 30px auto;
+        padding: 0 20px 40px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        line-height: 1.35;
+      }
+      .intro {
+        margin: 0 0 18px;
+        color: #34486f;
+        line-height: 1.7;
+      }
+      .panel {
+        background: #fff;
+        border: 1px solid #d3ddf0;
+        border-radius: 8px;
+        padding: 18px;
+      }
+      .section {
+        margin-bottom: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e3eaf8;
+      }
+      .section:last-of-type {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+      .section-title {
+        margin: 0 0 8px;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      .desc {
+        margin: 0 0 10px;
+        color: #4a6089;
+        font-size: 13px;
+        line-height: 1.7;
+      }
+      .item {
+        margin-bottom: 12px;
+      }
+      .item:last-child {
+        margin-bottom: 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .label {
+        display: block;
+        margin: 0 0 6px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .hint {
+        margin: 6px 0 0;
+        color: #546b95;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      textarea,
+      input[type="text"],
+      input[type="password"],
+      input[type="number"],
+      input[type="time"],
+      select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #b8c7e3;
+        border-radius: 6px;
+        padding: 9px 10px;
+        font-size: 14px;
+        line-height: 1.4;
+        background: #fff;
+        color: #14213b;
+      }
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+      input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+      }
+      .grid2 {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr 1fr;
+      }
+      .grid3 {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+      .time-rule {
+        border: 1px solid #d8e2f7;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fbfdff;
+      }
+      .time-rule:last-child {
+        margin-bottom: 0;
+      }
+      .days {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+      }
+      .day {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+        color: #2f4369;
+      }
+      .rule-actions {
+        margin-top: 8px;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .rule-actions button {
+        border: 1px solid #d39ba4;
+        background: #fff3f5;
+        color: #7e2c39;
+      }
+      .top-actions {
+        margin-bottom: 10px;
+      }
+      .actions {
+        margin-top: 16px;
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        border: 1px solid #95acd4;
+        border-radius: 6px;
+        padding: 9px 14px;
+        background: #f2f6ff;
+        color: #1d2f53;
+        font-size: 14px;
+        cursor: pointer;
+      }
+      button.primary {
+        border-color: #3f8cff;
+        background: #2f74e2;
+        color: #fff;
+      }
+      .status {
+        margin-top: 12px;
+        min-height: 22px;
+        color: #355184;
+      }
+      .warn {
+        margin: 8px 0 0;
+        color: #904400;
+        background: #fff3dc;
+        border: 1px solid #f0c988;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      @media (max-width: 860px) {
+        .grid2,
+        .grid3 {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <h1>B站学习模式守护 - 详细设置</h1>
+      <p class="intro">
+        首页只负责开关功能；这里负责每个功能的详细规则。你可以设置关键词、AI、时间段策略和密码保护。
+      </p>
+
+      <section class="panel">
+        <div class="section">
+          <h2 class="section-title">基础拦截</h2>
+          <p class="desc">基础规则是“先屏蔽词，再学习词”。命中屏蔽词直接拦截，未命中再判断学习词。</p>
+
+          <div class="item">
+            <label class="row">
+              <input id="enabled" type="checkbox" />
+              <span>启用视频拦截</span>
+            </label>
+          </div>
+
+          <div class="item">
+            <label class="row">
+              <input id="fallbackToMeta" type="checkbox" />
+              <span>标签缺失时，使用标题/分区兜底判定</span>
+            </label>
+            <p class="hint">关闭后，缺少标签的视频会更严格地被拦截。</p>
+          </div>
+
+          <div class="item">
+            <label class="label" for="allowKeywords">学习关键词（白名单）</label>
+            <textarea id="allowKeywords"></textarea>
+            <p class="hint">每行一个或逗号分隔。命中后可放行。</p>
+          </div>
+
+          <div class="item">
+            <label class="label" for="blockKeywords">屏蔽关键词（黑名单）</label>
+            <textarea id="blockKeywords"></textarea>
+            <p class="hint">每行一个或逗号分隔。命中后直接拦截。</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">封面隐藏与养号</h2>
+          <p class="desc">封面隐藏用于减少刺激源；自动不感兴趣会尝试帮你做“内容不感兴趣”反馈，减少后续推荐。</p>
+
+          <div class="item">
+            <label class="row">
+              <input id="hideBlockedCovers" type="checkbox" />
+              <span>启用封面隐藏</span>
+            </label>
+          </div>
+
+          <div class="item">
+            <label class="row">
+              <input id="autoNotInterestedEnabled" type="checkbox" />
+              <span>自动标记“不感兴趣”</span>
+            </label>
+            <p class="hint">默认关闭。开启后对被隐藏/被拦截视频做最佳努力反馈，页面结构变化时可能偶发失效。</p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">AI 辅助判定</h2>
+          <p class="desc">适合无标签或标签不可靠场景。会将标题/分区/标签发送到你提供的模型接口。</p>
+
+          <div class="item">
+            <label class="row">
+              <input id="aiEnabled" type="checkbox" />
+              <span>启用AI判定</span>
+            </label>
+          </div>
+
+          <div class="grid2">
+            <div class="item">
+              <label class="row">
+                <input id="aiOnlyWhenNoTag" type="checkbox" />
+                <span>仅无标签时调用AI</span>
+              </label>
+            </div>
+            <div class="item">
+              <label class="row">
+                <input id="aiBlockEnabled" type="checkbox" />
+                <span>AI判定娱乐后执行拦截</span>
+              </label>
+            </div>
+            <div class="item">
+              <label class="row">
+                <input id="aiHideEnabled" type="checkbox" />
+                <span>AI判定娱乐后隐藏封面</span>
+              </label>
+              <p class="hint">需要同时开启“封面隐藏”。</p>
+            </div>
+          </div>
+
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="aiApiUrl">AI API URL</label>
+              <input id="aiApiUrl" type="text" placeholder="例如：https://api.example.com/v1/chat/completions" />
+            </div>
+            <div class="item">
+              <label class="label" for="aiModel">AI Model</label>
+              <input id="aiModel" type="text" placeholder="例如：gpt-4o-mini" />
+            </div>
+            <div class="item">
+              <label class="label" for="aiApiKey">AI API Key</label>
+              <input id="aiApiKey" type="password" placeholder="sk-..." />
+            </div>
+            <div class="item">
+              <label class="label" for="aiRequestTimeoutMs">AI请求超时（毫秒）</label>
+              <input id="aiRequestTimeoutMs" type="number" min="3000" max="30000" step="1000" />
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">时段策略</h2>
+          <p class="desc">可按时间段套用不同策略：普通模式、自定义模式、严格模式、完全禁止访问。</p>
+
+          <div class="item">
+            <label class="row">
+              <input id="timeStrategyEnabled" type="checkbox" />
+              <span>启用时段策略</span>
+            </label>
+          </div>
+
+          <div class="top-actions">
+            <button id="addTimeRule" type="button">新增时段规则</button>
+          </div>
+          <div id="timeRulesContainer"></div>
+          <p class="hint">规则支持跨天，例如 22:00 - 06:00。冲突时优先级：完全禁止 > 严格 > 自定义 > 普通。</p>
+        </div>
+
+        <div class="section">
+          <h2 class="section-title">专注密码锁</h2>
+          <p class="desc">开启后，任何“降低专注度”的操作都需要密码。</p>
+
+          <div class="item">
+            <label class="row">
+              <input id="focusLockEnabled" type="checkbox" />
+              <span>启用专注密码锁</span>
+            </label>
+          </div>
+
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="newPassword">设置/更新密码</label>
+              <input id="newPassword" type="password" placeholder="留空表示不修改密码" />
+            </div>
+            <div class="item">
+              <label class="label" for="confirmPassword">确认新密码</label>
+              <input id="confirmPassword" type="password" placeholder="再次输入新密码" />
+            </div>
+            <div class="item">
+              <label class="label" for="unlockPassword">当前密码（用于降级或解锁操作）</label>
+              <input id="unlockPassword" type="password" placeholder="仅在需要时填写" />
+            </div>
+          </div>
+
+          <p class="warn">建议让他人帮你设置密码，并且不要告诉你本人，这样专注效果更稳。</p>
+        </div>
+
+        <div class="actions">
+          <button class="primary" id="save">保存设置</button>
+          <button id="reset">恢复默认</button>
+        </div>
+        <div class="status" id="status"></div>
+      </section>
+    </main>
+
+    <script src="options.js"></script>
+  </body>
+</html>

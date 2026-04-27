@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "B站学习模式守护",
+  "description": "仅允许访问与学习相关的B站视频，帮助你保持专注。",
+  "version": "1.2.0",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.bilibili.com/*",
+    "https://search.bilibili.com/*",
+    "https://api.bilibili.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.bilibili.com/*", "https://search.bilibili.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "B站学习模式守护",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html"
+}

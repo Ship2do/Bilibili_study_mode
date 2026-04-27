@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>B站学习模式守护</title>
+    <style>
+      body {
+        margin: 0;
+        width: 300px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        background: #0f1728;
+        color: #ecf2ff;
+      }
+      .wrap {
+        padding: 14px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: 16px;
+        line-height: 1.4;
+      }
+      .feature {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px solid #22304d;
+      }
+      .feature:last-of-type {
+        border-bottom: 0;
+      }
+      .name {
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      .switch {
+        width: 42px;
+        height: 24px;
+        position: relative;
+        flex: 0 0 auto;
+      }
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      .slider {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: #4b556f;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .slider::before {
+        content: "";
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        left: 3px;
+        top: 3px;
+        border-radius: 999px;
+        background: #fff;
+        transition: 0.2s;
+      }
+      input:checked + .slider {
+        background: #3f8cff;
+      }
+      input:checked + .slider::before {
+        transform: translateX(18px);
+      }
+      .actions {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      button {
+        border: 1px solid #2f3e5d;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #e6eeff;
+        background: #1a2741;
+      }
+      button.primary {
+        border-color: #3f8cff;
+        background: #245ec2;
+      }
+      .status {
+        margin-top: 10px;
+        min-height: 18px;
+        color: #89a4d5;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>B站学习模式守护</h1>
+
+      <div class="feature">
+        <span class="name">视频拦截</span>
+        <label class="switch">
+          <input type="checkbox" data-key="enabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="feature">
+        <span class="name">封面隐藏</span>
+        <label class="switch">
+          <input type="checkbox" data-key="hideBlockedCovers" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="feature">
+        <span class="name">AI判定</span>
+        <label class="switch">
+          <input type="checkbox" data-key="aiEnabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="feature">
+        <span class="name">自动不感兴趣</span>
+        <label class="switch">
+          <input type="checkbox" data-key="autoNotInterestedEnabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="feature">
+        <span class="name">时段策略</span>
+        <label class="switch">
+          <input type="checkbox" data-key="timeStrategyEnabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="feature">
+        <span class="name">专注密码锁</span>
+        <label class="switch">
+          <input type="checkbox" data-key="focusLockEnabled" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="openOptions">详细设置</button>
+        <button id="reset">恢复默认</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
