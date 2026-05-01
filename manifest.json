@@ -2,21 +2,33 @@
   "manifest_version": 3,
   "name": "B站学习模式守护",
   "description": "仅允许访问与学习相关的B站视频，帮助你保持专注。",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.bilibili.com/*",
     "https://search.bilibili.com/*",
     "https://api.bilibili.com/*",
+    "https://api.live.bilibili.com/*",
     "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background/background.js"
   },
   "content_scripts": [
     {
       "matches": ["https://www.bilibili.com/*", "https://search.bilibili.com/*"],
-      "js": ["content.js"],
+      "js": [
+        "shared/constants.js",
+        "shared/utils.js",
+        "content/utils.js",
+        "content/overlay.js",
+        "content/live-parser.js",
+        "content/video-groups.js",
+        "content/auto-not-interested.js",
+        "content/page-blocker.js",
+        "content/card-hider.js",
+        "content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
