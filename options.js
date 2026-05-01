@@ -1,18 +1,5 @@
 const DEFAULT_AI_PROMPT_TEMPLATE = [
-  "请判断这个B站视频是否属于学习向内容。",
-  "请严格只输出JSON，不要输出任何额外文字。",
-  "JSON格式：{\"is_learning\":true/false,\"confidence\":0到1数字,\"reason\":\"简短原因\"}",
-  "",
-  "标题: {{title}}",
-  "分区: {{partition}}",
-  "标签: {{tags}}",
-  "UP主: {{owner_name}}",
-  "UP主ID: {{owner_mid}}",
-  "UP主签名: {{owner_sign}}",
-  "简介: {{description}}",
-  "BV号: {{bvid}}",
-  "AV号: {{aid}}",
-  "完整元数据(JSON): {{metadata_json}}"
+  "标题为{{title}}的视频，分区是{{partition}}，标签是{{tags}}，请你判断是否为娱乐类视频。"
 ].join("\n");
 
 const DEFAULT_ALLOW_KEYWORDS = [
@@ -633,3 +620,40 @@ addTimeRuleButton.addEventListener("click", () => {
 saveButton.addEventListener("click", saveSettings);
 resetButton.addEventListener("click", resetSettings);
 loadSettings();
+
+const PLACEHOLDER_DEFS = [
+  { key: "title", label: "标题" },
+  { key: "partition", label: "分区" },
+  { key: "tags", label: "标签" },
+  { key: "owner_name", label: "UP主" },
+  { key: "description", label: "简介" },
+  { key: "duration", label: "时长" },
+  { key: "bvid", label: "BV号" },
+  { key: "metadata_json", label: "完整元数据" }
+];
+
+(function initPlaceholderButtons() {
+  const container = document.getElementById("placeholderButtons");
+  if (!container) return;
+
+  for (const def of PLACEHOLDER_DEFS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "placeholder-btn";
+    btn.textContent = def.label;
+    btn.dataset.placeholder = `{{${def.key}}}`;
+    btn.addEventListener("click", () => {
+      const textarea = aiPromptInput;
+      if (!textarea) return;
+      const placeholder = btn.dataset.placeholder;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const value = textarea.value;
+      textarea.value = value.slice(0, start) + placeholder + value.slice(end);
+      const newPos = start + placeholder.length;
+      textarea.setSelectionRange(newPos, newPos);
+      textarea.focus();
+    });
+    container.appendChild(btn);
+  }
+})();

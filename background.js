@@ -1,18 +1,5 @@
 const DEFAULT_AI_PROMPT_TEMPLATE = [
-  "请判断这个B站视频是否属于学习向内容。",
-  "请严格只输出JSON，不要输出任何额外文字。",
-  "JSON格式：{\"is_learning\":true/false,\"confidence\":0到1数字,\"reason\":\"简短原因\"}",
-  "",
-  "标题: {{title}}",
-  "分区: {{partition}}",
-  "标签: {{tags}}",
-  "UP主: {{owner_name}}",
-  "UP主ID: {{owner_mid}}",
-  "UP主签名: {{owner_sign}}",
-  "简介: {{description}}",
-  "BV号: {{bvid}}",
-  "AV号: {{aid}}",
-  "完整元数据(JSON): {{metadata_json}}"
+  "标题为{{title}}的视频，分区是{{partition}}，标签是{{tags}}，请你判断是否为娱乐类视频。"
 ].join("\n");
 
 const DEFAULT_SETTINGS = Object.freeze({
@@ -697,6 +684,9 @@ function videoKeyFromId(videoId) {
   if (videoId.aid) {
     return `aid:${videoId.aid}`;
   }
+  if (videoId.rid) {
+    return `room:${videoId.rid}`;
+  }
   return "";
 }
 
@@ -964,7 +954,7 @@ function evaluateWeakMode(metadata, settings) {
   if (blockMatches.length > 0) {
     return createModeDecision(
       true,
-      `弱模式命中屏蔽关键词：${blockMatches.join("、")}`,
+      `命中屏蔽词`,
       "weak_block_keyword",
       "weak",
       [],
@@ -975,7 +965,7 @@ function evaluateWeakMode(metadata, settings) {
 
   return createModeDecision(
     false,
-    "弱模式未命中屏蔽关键词",
+    "未命中屏蔽词",
     "",
     "weak",
     [],
@@ -989,7 +979,7 @@ function evaluateStrongMode(metadata, settings) {
   if (allowMatches.length > 0) {
     return createModeDecision(
       false,
-      `强模式命中学习关键词：${allowMatches.join("、")}`,
+      `命中学习词`,
       "",
       "strong",
       allowMatches,
@@ -1000,7 +990,7 @@ function evaluateStrongMode(metadata, settings) {
 
   return createModeDecision(
     true,
-    "强模式未命中学习关键词",
+    "未命中学习词",
     "strong_not_learning",
     "strong",
     [],
@@ -1199,6 +1189,26 @@ function renderPromptTemplate(template, metadata) {
   });
 }
 
+function normalizeAiApiUrl(rawUrl) {
+  const url = String(rawUrl || "").trim().replace(/\/+$/, "");
+  if (!url) return "";
+
+  if (/\/(chat\/completions|messages|completions|generate)$/i.test(url)) {
+    return url;
+  }
+
+  if (/\/v\d+$/i.test(url)) {
+    return url + "/chat/completions";
+  }
+
+  const parsed = new URL(url);
+  if (!parsed.pathname || parsed.pathname === "/") {
+    return url + "/v1/chat/completions";
+  }
+
+  return url;
+}
+
 async function callAiJudge(metadata, settings) {
   const userPrompt = renderPromptTemplate(settings.aiPrompt, metadata);
   const body = {
@@ -1208,7 +1218,7 @@ async function callAiJudge(metadata, settings) {
       {
         role: "system",
         content:
-          "你是B站学习内容判定器。你必须基于输入信息判断是否为学习向内容。仅输出JSON，不要输出其它文本。"
+          "你是B站内容判定器。根据输入信息判断是否为娱乐类视频。必须严格输出JSON格式，不要输出任何其它文本。JSON格式：{\"is_learning\":true/false,\"reason\":\"简短原因\"}"
       },
       { role: "user", content: userPrompt }
     ]
@@ -1225,7 +1235,8 @@ async function callAiJudge(metadata, settings) {
   const timeoutId = setTimeout(() => controller.abort(), settings.aiRequestTimeoutMs);
 
   try {
-    const response = await fetch(settings.aiApiUrl, {
+    const apiUrl = normalizeAiApiUrl(settings.aiApiUrl);
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -1256,7 +1267,7 @@ async function evaluateAiMode(metadata, settings) {
   if (settings.aiPreFilterBlockKeywords && blockMatches.length > 0) {
     return createModeDecision(
       true,
-      `AI模式前置过滤命中屏蔽关键词：${blockMatches.join("、")}`,
+      `命中屏蔽词`,
       "ai_prefilter_block_keyword",
       "ai",
       [],
@@ -1296,7 +1307,7 @@ async function evaluateAiMode(metadata, settings) {
     if (aiResult.isLearning) {
       return createModeDecision(
         false,
-        aiResult.reason ? `AI判定为学习向：${aiResult.reason}` : "AI判定为学习向",
+        aiResult.reason || "AI判定为学习向",
         "",
         "ai",
         [],
@@ -1307,7 +1318,7 @@ async function evaluateAiMode(metadata, settings) {
 
     return createModeDecision(
       true,
-      aiResult.reason ? `AI判定为非学习向：${aiResult.reason}` : "AI判定为非学习向",
+      aiResult.reason || "AI判定为非学习向",
       "ai_not_learning",
       "ai",
       [],
@@ -1317,7 +1328,7 @@ async function evaluateAiMode(metadata, settings) {
   } catch (error) {
     return createModeDecision(
       true,
-      `AI判定失败，已按安全策略拦截：${String(error.message || error)}`,
+      `AI判定失败：${String(error.message || error)}`,
       "ai_error",
       "ai",
       [],
@@ -1368,7 +1379,7 @@ function applyActions(modeDecision, settings, context) {
     return {
       allowed: true,
       hideCard: false,
-      reason: `${modeDecision.reason}（当前仅启用封面隐藏）`,
+      reason: modeDecision.reason,
       blockedBy: modeDecision.blockedBy,
       mode: modeDecision.mode,
       matchedAllowKeywords: modeDecision.matchedAllowKeywords,
@@ -1401,6 +1412,50 @@ function failedDecision(message) {
     ai: createDefaultAiResult(),
     metadata: { title: "", tname: "", tags: [] }
   };
+}
+
+async function fetchLiveRoomMetadata(rid) {
+  const roomUrl = `https://api.live.bilibili.com/room/v1/Room/get_info?room_id=${encodeURIComponent(rid)}`;
+  const roomResponse = await fetchJson(roomUrl);
+
+  if (roomResponse.code !== 0 || !roomResponse.data) {
+    throw new Error(`直播间接口异常: code=${roomResponse.code}`);
+  }
+
+  const room = roomResponse.data;
+  const metadata = {
+    aid: "",
+    bvid: "",
+    title: room.title ? String(room.title) : "",
+    tname: room.area_name ? String(room.area_name) : "",
+    desc: room.tags ? String(room.tags) : "",
+    duration: null,
+    pubdate: null,
+    ownerName: room.anchor_info && room.anchor_info.base_info ? String(room.anchor_info.base_info.uname || "") : "",
+    ownerMid: room.uid ? String(room.uid) : "",
+    ownerSign: "",
+    tags: []
+  };
+
+  if (room.tags) {
+    metadata.tags = String(room.tags)
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+  }
+
+  try {
+    const anchorUrl = `https://api.live.bilibili.com/live_user/v1/UserInfo/get_anchor_in_room?room_id=${encodeURIComponent(rid)}`;
+    const anchorResponse = await fetchJson(anchorUrl);
+    if (anchorResponse.code === 0 && anchorResponse.data && anchorResponse.data.info) {
+      const info = anchorResponse.data.info;
+      if (info.uname) metadata.ownerName = String(info.uname);
+    }
+  } catch (_error) {
+    // ignore
+  }
+
+  return metadata;
 }
 
 async function checkVideoWithSettings(videoId, settings, context) {
@@ -1438,7 +1493,9 @@ async function checkVideoWithSettings(videoId, settings, context) {
 
   const task = (async () => {
     try {
-      const metadata = await fetchVideoMetadata(videoId);
+      const metadata = videoId.type === "live"
+        ? await fetchLiveRoomMetadata(videoId.rid)
+        : await fetchVideoMetadata(videoId);
       const modeDecision = await evaluateByMode(metadata, effectiveSettings);
       const finalDecision = applyActions(modeDecision, effectiveSettings, normalizedContext);
       finalDecision.timeRule = activeTimeRule || null;

@@ -63,6 +63,8 @@
       allowed: source.allowed === true,
       hideCard: source.hideCard === true,
       reason: String(source.reason || ""),
+      blockedBy: String(source.blockedBy || ""),
+      mode: String(source.mode || ""),
       matchedKeywords: Array.isArray(source.matchedKeywords)
         ? source.matchedKeywords
         : source.allowed
@@ -108,6 +110,30 @@
     }
 
     return null;
+  }
+
+  function parseLiveRoomId(urlText) {
+    let url;
+    try {
+      url = new URL(urlText, location.origin);
+    } catch (_error) {
+      return null;
+    }
+
+    const isLiveHost = url.hostname === "live.bilibili.com";
+    const isLivePath = /\/live\/(\d+)/.test(url.pathname);
+
+    if (!isLiveHost && !isLivePath) {
+      return null;
+    }
+
+    const match = url.pathname.match(/\/(\d+)(?:\/|$|\?)/);
+    if (!match) {
+      return null;
+    }
+
+    const rid = match[1];
+    return { rid, key: `room:${rid}`, type: "live" };
   }
 
   function sendMessage(message) {
@@ -241,24 +267,10 @@
 
     const videoInfo = document.createElement("p");
     videoInfo.className = "sg-video-info";
-    videoInfo.style.margin = "0 0 10px";
+    videoInfo.style.margin = "0 0 18px";
     videoInfo.style.color = "#9fb0d4";
     videoInfo.style.fontSize = "14px";
     videoInfo.style.lineHeight = "1.7";
-
-    const keywordInfo = document.createElement("p");
-    keywordInfo.className = "sg-keyword-info";
-    keywordInfo.style.margin = "0 0 10px";
-    keywordInfo.style.color = "#9fb0d4";
-    keywordInfo.style.fontSize = "14px";
-    keywordInfo.style.lineHeight = "1.7";
-
-    const tagInfo = document.createElement("p");
-    tagInfo.className = "sg-tag-info";
-    tagInfo.style.margin = "0 0 18px";
-    tagInfo.style.color = "#9fb0d4";
-    tagInfo.style.fontSize = "14px";
-    tagInfo.style.lineHeight = "1.7";
 
     const actions = document.createElement("div");
     actions.style.display = "flex";
@@ -298,7 +310,7 @@
     });
 
     actions.append(homeButton, optionsButton);
-    panel.append(title, reason, videoInfo, keywordInfo, tagInfo, actions);
+    panel.append(title, reason, videoInfo, actions);
     overlay.append(panel);
 
     const parent = document.documentElement || document.body;
@@ -337,6 +349,30 @@
     document.body.style.overflow = STATE.bodyOverflow;
   }
 
+  function getBlockReasonText(result) {
+    const mode = result.mode || "";
+    const blockedBy = result.blockedBy || "";
+    const reason = result.reason || "";
+
+    if (mode === "weak") {
+      return "命中屏蔽词";
+    }
+    if (mode === "strong") {
+      return "未命中学习词";
+    }
+    if (mode === "ai") {
+      return reason || "AI判定为非学习向";
+    }
+    return reason || "该视频未通过学习模式规则";
+  }
+
+  function getModeLabel(mode) {
+    if (mode === "weak") return "弱模式";
+    if (mode === "strong") return "强模式";
+    if (mode === "ai") return "AI模式";
+    return "学习模式";
+  }
+
   function blockPage(rawResult) {
     const result = normalizeDecision(rawResult);
     const overlay = ensureOverlay();
@@ -344,34 +380,21 @@
       return;
     }
 
+    const titleEl = overlay.querySelector("h1");
     const reasonEl = overlay.querySelector(".sg-reason");
     const videoInfoEl = overlay.querySelector(".sg-video-info");
-    const keywordInfoEl = overlay.querySelector(".sg-keyword-info");
-    const tagInfoEl = overlay.querySelector(".sg-tag-info");
     const metadata = result.metadata || {};
-    const tags = Array.isArray(metadata.tags) ? metadata.tags : [];
-    const blockMatched = Array.isArray(result.matchedBlockKeywords)
-      ? result.matchedBlockKeywords
-      : [];
-    const allowMatched = Array.isArray(result.matchedAllowKeywords)
-      ? result.matchedAllowKeywords
-      : [];
 
+    if (titleEl) {
+      titleEl.textContent = getModeLabel(result.mode);
+    }
     if (reasonEl) {
-      reasonEl.textContent = `原因：${result.reason || "该视频未通过学习模式规则"}`;
+      reasonEl.textContent = `原因：${getBlockReasonText(result)}`;
     }
     if (videoInfoEl) {
-      const title = metadata.title ? metadata.title : "未知";
-      const tname = metadata.tname ? metadata.tname : "未知";
+      const title = metadata.title || "未知";
+      const tname = metadata.tname || "未知";
       videoInfoEl.textContent = `标题：${title} | 分区：${tname}`;
-    }
-    if (keywordInfoEl) {
-      const blockText = blockMatched.length ? blockMatched.join("、") : "无";
-      const allowText = allowMatched.length ? allowMatched.join("、") : "无";
-      keywordInfoEl.textContent = `命中屏蔽词：${blockText} | 命中学习词：${allowText}`;
-    }
-    if (tagInfoEl) {
-      tagInfoEl.textContent = `视频标签：${tags.length ? tags.join(" / ") : "未获取到标签"}`;
     }
 
     overlay.style.display = "flex";
@@ -401,23 +424,35 @@
     STATE.blocked = false;
   }
 
+  async function fetchVideoMetadataForPage(videoId) {
+    const response = await sendMessage({
+      type: "CHECK_VIDEO",
+      videoId,
+      context: "page"
+    });
+    return normalizeDecision(response);
+  }
+
   async function evaluateCurrentPage() {
     const videoId = parseVideoId(location.href);
-    if (!videoId) {
+    const liveId = !videoId ? parseLiveRoomId(location.href) : null;
+    const currentId = videoId || liveId;
+
+    if (!currentId) {
       STATE.lastHref = location.href;
       STATE.lastVideoKey = "";
       unblockPage();
       return;
     }
 
-    if (STATE.lastVideoKey === videoId.key && STATE.lastHref === location.href) {
+    if (STATE.lastVideoKey === currentId.key && STATE.lastHref === location.href) {
       return;
     }
 
-    STATE.lastVideoKey = videoId.key;
+    STATE.lastVideoKey = currentId.key;
     STATE.lastHref = location.href;
     const requestId = ++STATE.requestId;
-    const result = await checkSingleVideo(videoId, "page");
+    const result = await checkSingleVideo(currentId, "page");
 
     if (requestId !== STATE.requestId) {
       return;
@@ -436,7 +471,7 @@
   }
 
   function collectVideoGroups() {
-    const links = document.querySelectorAll("a[href*='/video/']");
+    const links = document.querySelectorAll("a[href*='/video/'], a[href*='/live/']");
     const groups = new Map();
 
     for (const link of links) {
@@ -450,7 +485,9 @@
       if (!href) {
         continue;
       }
-      const videoId = parseVideoId(href);
+
+      const isLiveLink = /live\.bilibili\.com/.test(href) || /\/live\//.test(href);
+      const videoId = isLiveLink ? parseLiveRoomId(href) : parseVideoId(href);
       if (!videoId) {
         continue;
       }
@@ -470,7 +507,7 @@
     if (!(element instanceof HTMLElement)) {
       return 0;
     }
-    return element.querySelectorAll("a[href*='/video/']").length;
+    return element.querySelectorAll("a[href*='/video/'], a[href*='/live/']").length;
   }
 
   function getContainerMeta(element) {
@@ -709,6 +746,9 @@
     if (metadata && metadata.aid) {
       return `aid:${metadata.aid}`;
     }
+    if (metadata && metadata.rid) {
+      return `room:${metadata.rid}`;
+    }
     if (fallback) {
       return String(fallback);
     }
@@ -816,20 +856,41 @@
         return;
       }
 
-      const chunks = chunkArray(pending, 12);
-      for (const chunk of chunks) {
-        const videoIds = chunk.map((group) => group.videoId);
-        const batchResults = await checkVideosInBatch(videoIds);
+      const videoGroups = [];
+      const liveGroups = [];
+      for (const group of pending) {
+        if (group.videoId.type === "live") {
+          liveGroups.push(group);
+        } else {
+          videoGroups.push(group);
+        }
+      }
 
-        for (const group of chunk) {
-          const decision = normalizeDecision(
-            batchResults[group.videoId.key] || emptyDecision("未收到校验结果")
-          );
-          if (shouldHideCard(decision)) {
-            hideGroup(group, decision);
-          } else {
-            STATE.decisionCache.set(group.videoId.key, decision);
+      if (videoGroups.length > 0) {
+        const chunks = chunkArray(videoGroups, 12);
+        for (const chunk of chunks) {
+          const videoIds = chunk.map((group) => group.videoId);
+          const batchResults = await checkVideosInBatch(videoIds);
+
+          for (const group of chunk) {
+            const decision = normalizeDecision(
+              batchResults[group.videoId.key] || emptyDecision("未收到校验结果")
+            );
+            if (shouldHideCard(decision)) {
+              hideGroup(group, decision);
+            } else {
+              STATE.decisionCache.set(group.videoId.key, decision);
+            }
           }
+        }
+      }
+
+      for (const group of liveGroups) {
+        const decision = await checkSingleVideo(group.videoId, "card");
+        if (shouldHideCard(decision)) {
+          hideGroup(group, decision);
+        } else {
+          STATE.decisionCache.set(group.videoId.key, decision);
         }
       }
     } finally {

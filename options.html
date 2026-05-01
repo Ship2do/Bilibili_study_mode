@@ -260,6 +260,40 @@
         word-break: break-word;
       }
 
+      .placeholder-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
+      .placeholder-label {
+        font-size: 13px;
+        color: var(--sub);
+      }
+
+      .placeholder-btn {
+        border: 1px solid #b8c7e3;
+        border-radius: 4px;
+        padding: 3px 10px;
+        background: #e8efff;
+        color: #274068;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+        user-select: none;
+      }
+
+      .placeholder-btn:hover {
+        background: #d0deff;
+        border-color: #8eaed6;
+      }
+
+      .placeholder-btn:active {
+        background: #b8cdff;
+      }
+
       .custom-overrides {
         border-top: 1px dashed #d8e2f7;
         padding-top: 10px;
@@ -376,8 +410,9 @@
               <input
                 id="aiApiUrl"
                 type="text"
-                placeholder="例如：https://api.example.com/v1/chat/completions"
+                placeholder="例如：https://api.deepseek.com"
               />
+              <p class="hint">填写API的Base URL即可，系统会自动补全路径。如 https://api.deepseek.com 或 https://api.openai.com</p>
             </div>
             <div class="item">
               <label class="label" for="aiModel">AI Model</label>
@@ -395,12 +430,11 @@
 
           <div class="item">
             <label class="label" for="aiPrompt">AI Prompt 模板</label>
+            <div class="placeholder-buttons" id="placeholderButtons">
+              <span class="placeholder-label">插入占位符：</span>
+            </div>
             <textarea id="aiPrompt"></textarea>
-            <p class="placeholder-list">
-              可用占位符：{{title}} {{partition}} {{tags}} {{owner_name}} {{owner_mid}}
-              {{owner_sign}} {{description}} {{aid}} {{bvid}} {{duration}} {{pubdate}}
-              {{metadata_json}}
-            </p>
+            <p class="hint">点击上方按钮可在光标位置插入对应占位符。系统会自动添加JSON输出格式要求，无需手动添加。</p>
           </div>
         </div>
 
