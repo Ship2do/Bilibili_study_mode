@@ -16,6 +16,14 @@ function getBlockReasonText(result) {
   return reason || "该视频未通过学习模式规则";
 }
 
+function seededRandom(seed) {
+  let s = seed;
+  return function () {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
 function buildBanners(text) {
   const container = document.createElement("div");
   container.style.cssText = `
@@ -23,35 +31,42 @@ function buildBanners(text) {
     pointer-events: none; z-index: 0;
   `;
 
-  const angles = [-35, 35];
-  const count = 12;
-  const repeatedText = Array(20).fill(text).join("　　　");
+  const rand = seededRandom(42);
+  const count = 18;
+  const repeatedText = Array(25).fill(text).join("　　　");
 
   for (let i = 0; i < count; i++) {
-    const banner = document.createElement("div");
-    const angle = angles[i % 2];
-    const topPercent = (i / count) * 120 - 10;
-    const duration = (i % 2 === 0) ? (7 + i % 3) : (9 + i % 3);
-    const direction = i % 4 < 2 ? "normal" : "reverse";
+    const angle = Math.round(rand() * 90 - 45);
+    const topPercent = (i / count) * 130 - 15;
+    const duration = 5 + Math.round(rand() * 10);
+    const direction = rand() > 0.5 ? "normal" : "reverse";
+    const hueShift = Math.round(rand() * 10 - 5);
+    const animClass = `sg-scroll-${i % 2}`;
 
+    const wrapper = document.createElement("div");
+    wrapper.style.cssText = `
+      position: absolute; left: -90%; top: ${topPercent}%;
+      width: 280%; height: 32px;
+      animation: ${animClass} ${duration}s linear infinite ${direction};
+    `;
+
+    const banner = document.createElement("div");
     banner.style.cssText = `
-      position: absolute;
-      width: 250%; height: 36px; line-height: 36px;
-      font-family: ${PIXEL_FONT}; font-size: 20px; font-weight: 900;
+      width: 100%; height: 32px; line-height: 32px;
+      font-family: ${PIXEL_FONT}; font-size: 18px; font-weight: 900;
       letter-spacing: 5px;
-      color: rgba(255, 255, 255, 0.88);
-      background: rgba(220, 38, 38, 0.82);
+      color: rgba(255, 255, 255, 0.85);
+      background: hsl(${355 + hueShift}, 80%, 42%);
       text-align: center; white-space: nowrap;
       transform: rotate(${angle}deg);
-      left: -75%;
-      top: ${topPercent}%;
       text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
       box-shadow: 0 1px 6px rgba(0,0,0,0.3);
       image-rendering: pixelated;
-      animation: sg-scroll-${i % 2} ${duration}s linear infinite ${direction};
     `;
     banner.textContent = repeatedText;
-    container.appendChild(banner);
+
+    wrapper.appendChild(banner);
+    container.appendChild(wrapper);
   }
 
   return container;
@@ -63,12 +78,12 @@ function injectBannerStyles() {
   style.id = "sg-style";
   style.textContent = `
     @keyframes sg-scroll-0 {
-      from { transform: rotate(-35deg) translateX(-15%); }
-      to   { transform: rotate(-35deg) translateX(15%); }
+      from { transform: translateX(-18%); }
+      to   { transform: translateX(18%); }
     }
     @keyframes sg-scroll-1 {
-      from { transform: rotate(35deg) translateX(15%); }
-      to   { transform: rotate(35deg) translateX(-15%); }
+      from { transform: translateX(18%); }
+      to   { transform: translateX(-18%); }
     }
     .sg-panel {
       position: relative; z-index: 1;

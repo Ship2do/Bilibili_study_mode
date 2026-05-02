@@ -6,13 +6,13 @@
     <title>B站学习模式守护</title>
     <style>
       :root {
-        --bg: #0c0a0a;
-        --panel: #141010;
-        --text: #e8d0d0;
-        --sub: #997777;
-        --line: #2a1515;
-        --brand: #cc1111;
-        --brand-border: #ff3333;
+        --bg: #1a1a2e;
+        --panel: #22223a;
+        --text: #d0d0e8;
+        --sub: #8888aa;
+        --line: #333355;
+        --brand: #cc2222;
+        --brand-border: #ff4444;
         --pixel: 'Courier New', 'Consolas', monospace;
       }
 
@@ -28,7 +28,7 @@
 
       h1 {
         margin: 0 0 14px; font-size: 18px; font-weight: 900;
-        color: #ff3333; text-transform: uppercase; letter-spacing: 3px;
+        color: #ff4444; text-transform: uppercase; letter-spacing: 3px;
         text-shadow: 2px 2px 0 #000;
         text-align: center;
       }
@@ -49,18 +49,16 @@
         gap: 10px; padding: 6px 0;
       }
 
-      .name { font-size: 13px; font-weight: 700; color: #ddaaaa; }
+      .name { font-size: 13px; font-weight: 700; color: #bbbbdd; }
 
       .mode-select {
         width: 150px;
-        border: 2px solid #331818; border-radius: 0;
+        border: 2px solid #3a3a5c; border-radius: 0;
         padding: 6px 8px; font-size: 12px;
-        background: #0e0808; color: var(--text);
+        background: #16162a; color: var(--text);
         font-family: var(--pixel);
       }
-      .mode-select:focus {
-        outline: none; border-color: #663333;
-      }
+      .mode-select:focus { outline: none; border-color: #7777aa; }
 
       .switch {
         width: 42px; height: 22px; position: relative; flex: 0 0 auto;
@@ -68,15 +66,15 @@
       .switch input { opacity: 0; width: 0; height: 0; }
       .slider {
         position: absolute; inset: 0;
-        background: #2a1515; cursor: pointer; transition: 0.15s;
-        border: 1px solid #442222;
+        background: #2e2e50; cursor: pointer; transition: 0.15s;
+        border: 1px solid #555577;
       }
       .slider::before {
         content: ""; position: absolute;
         width: 16px; height: 16px; left: 2px; top: 2px;
-        background: #886666; transition: 0.15s;
+        background: #8888aa; transition: 0.15s;
       }
-      input:checked + .slider { background: #cc1111; border-color: #ff4444; }
+      input:checked + .slider { background: #cc2222; border-color: #ff4444; }
       input:checked + .slider::before {
         transform: translateX(20px); background: #fff;
       }
@@ -87,13 +85,13 @@
       }
 
       button {
-        border: 2px solid #442222; border-radius: 0;
-        padding: 8px 10px; background: #1a0e0e; color: #ddaaaa;
+        border: 2px solid #555577; border-radius: 0;
+        padding: 8px 10px; background: #2a2a48; color: #bbbbdd;
         font-size: 12px; font-weight: 700; cursor: pointer;
         font-family: var(--pixel); letter-spacing: 1px;
         text-transform: uppercase;
       }
-      button:hover { background: #2a1414; border-color: #663333; }
+      button:hover { background: #3a3a5c; border-color: #7777aa; }
       button:active { transform: translate(1px, 1px); }
 
       button.primary {
@@ -101,11 +99,11 @@
         background: var(--brand); color: #fff;
         box-shadow: 3px 3px 0 #000;
       }
-      button.primary:hover { background: #dd2222; }
+      button.primary:hover { background: #dd3333; }
 
       .status {
         margin-top: 10px; min-height: 18px;
-        color: #775555; font-size: 11px;
+        color: #666688; font-size: 11px;
       }
     </style>
   </head>

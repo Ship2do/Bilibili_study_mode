@@ -6,17 +6,22 @@
     <title>B站学习模式守护 - 设置</title>
     <style>
       :root {
-        --bg: #0c0a0a;
-        --panel: #141010;
-        --text: #e8d0d0;
-        --sub: #997777;
-        --line: #2a1515;
-        --line-soft: #1e0e0e;
-        --brand: #cc1111;
-        --brand-border: #ff3333;
+        --bg: #1a1a2e;
+        --panel: #22223a;
+        --text: #d0d0e8;
+        --sub: #8888aa;
+        --line: #333355;
+        --line-soft: #2a2a48;
+        --brand: #cc2222;
+        --brand-border: #ff4444;
         --brand-glow: rgba(220, 38, 38, 0.15);
-        --warn-bg: #1a1208;
-        --warn-border: #664400;
+        --warn-bg: #2a2210;
+        --warn-border: #886622;
+        --chip-bg: #2e2e50;
+        --chip-border: #555577;
+        --chip-hover: #cc2222;
+        --input-bg: #16162a;
+        --input-border: #3a3a5c;
         --pixel: 'Courier New', 'Consolas', monospace;
       }
 
@@ -31,7 +36,7 @@
 
       h1 {
         margin: 0 0 6px; font-size: 26px; font-weight: 900;
-        color: #ff3333; text-transform: uppercase; letter-spacing: 4px;
+        color: #ff4444; text-transform: uppercase; letter-spacing: 4px;
         text-shadow: 2px 2px 0 #000;
       }
 
@@ -39,7 +44,7 @@
 
       .panel {
         background: var(--panel);
-        border: 2px solid #331515;
+        border: 2px solid #444466;
         padding: 20px;
       }
 
@@ -66,48 +71,47 @@
 
       .label {
         display: block; margin: 0 0 6px;
-        font-size: 13px; font-weight: 700; color: #ddaaaa;
+        font-size: 13px; font-weight: 700; color: #bbbbdd;
       }
 
-      /* Hover tooltip system */
       .tip {
         position: relative; cursor: help;
-        border-bottom: 1px dashed #553333;
+        border-bottom: 1px dashed #555577;
       }
       .tip .tip-text {
         visibility: hidden; opacity: 0;
         position: absolute; left: 0; top: 100%;
-        background: #1a0808; border: 1px solid #442222;
-        color: #cc9999; font-size: 11px; line-height: 1.6;
+        background: #2a2a48; border: 1px solid #555577;
+        color: #aaaacc; font-size: 11px; line-height: 1.6;
         padding: 8px 10px; min-width: 220px; max-width: 340px;
         z-index: 100; pointer-events: none;
         transition: opacity 0.15s;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
       }
       .tip:hover .tip-text { visibility: visible; opacity: 1; }
 
       .hint {
-        margin: 6px 0 0; color: #775555;
+        margin: 6px 0 0; color: #666688;
         font-size: 11px; line-height: 1.6;
       }
 
       textarea, input[type="text"], input[type="password"],
       input[type="number"], input[type="time"], select {
         width: 100%; box-sizing: border-box;
-        border: 2px solid #331818; border-radius: 0;
+        border: 2px solid var(--input-border); border-radius: 0;
         padding: 9px 10px; font-size: 13px; line-height: 1.4;
-        background: #0e0808; color: var(--text);
+        background: var(--input-bg); color: var(--text);
         font-family: var(--pixel);
       }
       textarea:focus, input:focus, select:focus {
-        outline: none; border-color: #663333;
-        box-shadow: 0 0 0 1px var(--brand-glow);
+        outline: none; border-color: #7777aa;
+        box-shadow: 0 0 0 1px rgba(120,120,180,0.2);
       }
 
       textarea { min-height: 100px; resize: vertical; }
 
       input[type="checkbox"], input[type="radio"] {
-        width: 16px; height: 16px; accent-color: #cc1111;
+        width: 16px; height: 16px; accent-color: #cc2222;
       }
 
       .grid2 { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
@@ -116,28 +120,28 @@
       .mode-grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr 1fr; }
 
       .mode-card {
-        border: 2px solid #2a1515; padding: 10px;
-        background: #0e0808; display: flex; flex-direction: column; gap: 5px;
+        border: 2px solid #3a3a5c; padding: 10px;
+        background: var(--input-bg); display: flex; flex-direction: column; gap: 5px;
         transition: border-color 0.15s;
       }
-      .mode-card:hover { border-color: #553333; }
-      .mode-card:has(input:checked) { border-color: #cc1111; background: #1a0c0c; }
+      .mode-card:hover { border-color: #6666aa; }
+      .mode-card:has(input:checked) { border-color: #cc2222; background: #221122; }
 
-      .mode-title { font-size: 13px; font-weight: 700; color: #ddaaaa; }
-      .mode-note { color: #886666; font-size: 11px; line-height: 1.6; }
+      .mode-title { font-size: 13px; font-weight: 700; color: #bbbbdd; }
+      .mode-note { color: #7777aa; font-size: 11px; line-height: 1.6; }
 
       .time-rule {
-        border: 2px solid #2a1515; padding: 12px; margin-bottom: 10px;
-        background: #0e0808;
+        border: 2px solid #3a3a5c; padding: 12px; margin-bottom: 10px;
+        background: var(--input-bg);
       }
       .time-rule:last-child { margin-bottom: 0; }
 
       .days { display: flex; flex-wrap: wrap; gap: 8px 10px; }
-      .day { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #aa8888; }
+      .day { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #8888aa; }
 
       .rule-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
       .rule-actions button {
-        border: 1px solid #553333; background: #1a0808; color: #cc8888;
+        border: 1px solid #555577; background: #2a2a48; color: #aaaacc;
       }
 
       .top-actions { margin-bottom: 10px; }
@@ -145,13 +149,13 @@
       .actions { margin-top: 18px; display: flex; gap: 10px; }
 
       button {
-        border: 2px solid #442222; border-radius: 0;
-        padding: 10px 16px; background: #1a0e0e; color: #ddaaaa;
+        border: 2px solid #555577; border-radius: 0;
+        padding: 10px 16px; background: #2a2a48; color: #bbbbdd;
         font-size: 13px; font-weight: 700; cursor: pointer;
         font-family: var(--pixel); letter-spacing: 1px;
         text-transform: uppercase;
       }
-      button:hover { background: #2a1414; border-color: #663333; }
+      button:hover { background: #3a3a5c; border-color: #7777aa; }
       button:active { transform: translate(1px, 1px); }
 
       button.primary {
@@ -159,14 +163,47 @@
         background: var(--brand); color: #fff;
         box-shadow: 3px 3px 0 #000;
       }
-      button.primary:hover { background: #dd2222; }
+      button.primary:hover { background: #dd3333; }
 
-      .status { margin-top: 12px; min-height: 22px; color: #aa7777; font-size: 12px; }
+      .status { margin-top: 12px; min-height: 22px; color: #7777aa; font-size: 12px; }
 
       .warn {
-        margin: 8px 0 0; color: #cc8800;
+        margin: 8px 0 0; color: #ccaa44;
         background: var(--warn-bg); border: 1px solid var(--warn-border);
         padding: 8px 10px; font-size: 11px; line-height: 1.6;
+      }
+
+      /* Keyword chips */
+      .chips-wrap {
+        display: flex; flex-wrap: wrap; gap: 6px;
+        padding: 8px; min-height: 42px;
+        border: 2px solid var(--input-border);
+        background: var(--input-bg);
+        cursor: text;
+      }
+      .chips-wrap:focus-within {
+        border-color: #7777aa;
+        box-shadow: 0 0 0 1px rgba(120,120,180,0.2);
+      }
+      .chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 3px 8px;
+        background: var(--chip-bg); border: 1px solid var(--chip-border);
+        font-size: 12px; color: #ccccdd;
+        font-family: var(--pixel);
+        transition: border-color 0.1s;
+      }
+      .chip:hover { border-color: var(--chip-hover); }
+      .chip .chip-x {
+        display: none; cursor: pointer; font-size: 11px; font-weight: 900;
+        color: #ff6666; margin-left: 2px; line-height: 1;
+      }
+      .chip:hover .chip-x { display: inline; }
+      .chip .chip-x:hover { color: #ff3333; }
+      .chip-input {
+        border: none; outline: none; background: transparent;
+        color: var(--text); font-family: var(--pixel); font-size: 12px;
+        min-width: 60px; flex: 1; padding: 2px 0;
       }
 
       .placeholder-buttons {
@@ -175,22 +212,22 @@
       }
       .placeholder-label { font-size: 12px; color: var(--sub); }
       .placeholder-btn {
-        border: 1px solid #443333; border-radius: 0;
-        padding: 3px 10px; background: #1a0e0e;
-        color: #cc9999; font-size: 11px; cursor: pointer;
+        border: 1px solid #555577; border-radius: 0;
+        padding: 3px 10px; background: #2a2a48;
+        color: #aaaacc; font-size: 11px; cursor: pointer;
         font-family: var(--pixel);
         transition: background 0.1s;
       }
-      .placeholder-btn:hover { background: #2a1414; border-color: #664444; }
+      .placeholder-btn:hover { background: #3a3a5c; border-color: #7777aa; }
 
       .custom-overrides {
-        border-top: 1px dashed #2a1515;
+        border-top: 1px dashed #3a3a5c;
         padding-top: 10px; margin-top: 10px;
       }
 
       .banner-preview {
         margin: 8px 0; padding: 12px;
-        background: #0a0404; border: 2px solid #331111;
+        background: #1a1a30; border: 2px solid #444466;
         text-align: center; overflow: hidden;
         font-size: 16px; font-weight: 900; color: #ff4444;
         text-shadow: 2px 2px 0 #000;
@@ -288,18 +325,22 @@
         <div class="section">
           <h2 class="section-title">关键词库</h2>
           <div class="item">
-            <label class="label" for="allowKeywords">
+            <label class="label">
               学习关键词（白名单）
-              <span class="tip">ⓘ<span class="tip-text">强模式基于它做放行判定，每行一个或逗号分隔</span></span>
+              <span class="tip">ⓘ<span class="tip-text">强模式基于它做放行判定，输入后回车添加</span></span>
             </label>
-            <textarea id="allowKeywords"></textarea>
+            <div class="chips-wrap" id="allowChips">
+              <input class="chip-input" id="allowChipInput" placeholder="输入关键词后回车..." />
+            </div>
           </div>
           <div class="item">
-            <label class="label" for="blockKeywords">
+            <label class="label">
               屏蔽关键词（黑名单）
               <span class="tip">ⓘ<span class="tip-text">弱模式与AI前置过滤基于它做拦截判定</span></span>
             </label>
-            <textarea id="blockKeywords"></textarea>
+            <div class="chips-wrap" id="blockChips">
+              <input class="chip-input" id="blockChipInput" placeholder="输入关键词后回车..." />
+            </div>
           </div>
         </div>
 
