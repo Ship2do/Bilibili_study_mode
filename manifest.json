@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "B站学习模式守护",
+  "name": "B站学习模式",
   "description": "仅允许访问与学习相关的B站视频，帮助你保持专注。",
   "version": "2.0.0",
   "permissions": [
