@@ -3,490 +3,391 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>B站学习模式守护 - 详细设置</title>
+    <title>B站学习模式守护 - 设置</title>
     <style>
       :root {
-        --bg: #f4f7ff;
-        --panel: #ffffff;
-        --text: #14213b;
-        --sub: #4a6089;
-        --line: #d3ddf0;
-        --line-soft: #e3eaf8;
-        --brand: #2f74e2;
-        --brand-border: #3f8cff;
-        --warn-bg: #fff3dc;
-        --warn-border: #f0c988;
+        --bg: #0c0a0a;
+        --panel: #141010;
+        --text: #e8d0d0;
+        --sub: #997777;
+        --line: #2a1515;
+        --line-soft: #1e0e0e;
+        --brand: #cc1111;
+        --brand-border: #ff3333;
+        --brand-glow: rgba(220, 38, 38, 0.15);
+        --warn-bg: #1a1208;
+        --warn-border: #664400;
+        --pixel: 'Courier New', 'Consolas', monospace;
       }
+
+      * { box-sizing: border-box; }
 
       body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
-          "Microsoft YaHei", sans-serif;
+        margin: 0; background: var(--bg); color: var(--text);
+        font-family: var(--pixel); font-size: 13px;
       }
 
-      .page {
-        max-width: 1040px;
-        margin: 30px auto;
-        padding: 0 20px 40px;
-      }
+      .page { max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }
 
       h1 {
-        margin: 0 0 10px;
-        font-size: 28px;
-        line-height: 1.35;
+        margin: 0 0 6px; font-size: 26px; font-weight: 900;
+        color: #ff3333; text-transform: uppercase; letter-spacing: 4px;
+        text-shadow: 2px 2px 0 #000;
       }
 
-      .intro {
-        margin: 0 0 18px;
-        color: #34486f;
-        line-height: 1.7;
-      }
+      .intro { margin: 0 0 20px; color: var(--sub); line-height: 1.7; font-size: 12px; }
 
       .panel {
         background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 8px;
-        padding: 18px;
+        border: 2px solid #331515;
+        padding: 20px;
       }
 
       .section {
-        margin-bottom: 18px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--line-soft);
+        margin-bottom: 18px; padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
       }
-
-      .section:last-of-type {
-        margin-bottom: 0;
-        padding-bottom: 0;
-        border-bottom: 0;
-      }
+      .section:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
 
       .section-title {
-        margin: 0 0 8px;
-        font-size: 17px;
-        font-weight: 700;
+        margin: 0 0 10px; font-size: 15px; font-weight: 900;
+        color: #ff6666; text-transform: uppercase; letter-spacing: 2px;
       }
 
       .desc {
-        margin: 0 0 10px;
-        color: var(--sub);
-        font-size: 13px;
-        line-height: 1.7;
+        margin: 0 0 10px; color: var(--sub);
+        font-size: 11px; line-height: 1.7;
       }
 
-      .item {
-        margin-bottom: 12px;
-      }
+      .item { margin-bottom: 12px; }
+      .item:last-child { margin-bottom: 0; }
 
-      .item:last-child {
-        margin-bottom: 0;
-      }
-
-      .row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
+      .row { display: flex; align-items: center; gap: 8px; }
 
       .label {
-        display: block;
-        margin: 0 0 6px;
-        font-size: 14px;
-        font-weight: 600;
+        display: block; margin: 0 0 6px;
+        font-size: 13px; font-weight: 700; color: #ddaaaa;
       }
+
+      /* Hover tooltip system */
+      .tip {
+        position: relative; cursor: help;
+        border-bottom: 1px dashed #553333;
+      }
+      .tip .tip-text {
+        visibility: hidden; opacity: 0;
+        position: absolute; left: 0; top: 100%;
+        background: #1a0808; border: 1px solid #442222;
+        color: #cc9999; font-size: 11px; line-height: 1.6;
+        padding: 8px 10px; min-width: 220px; max-width: 340px;
+        z-index: 100; pointer-events: none;
+        transition: opacity 0.15s;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      }
+      .tip:hover .tip-text { visibility: visible; opacity: 1; }
 
       .hint {
-        margin: 6px 0 0;
-        color: #546b95;
-        font-size: 12px;
-        line-height: 1.6;
+        margin: 6px 0 0; color: #775555;
+        font-size: 11px; line-height: 1.6;
       }
 
-      textarea,
-      input[type="text"],
-      input[type="password"],
-      input[type="number"],
-      input[type="time"],
-      select {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid #b8c7e3;
-        border-radius: 6px;
-        padding: 9px 10px;
-        font-size: 14px;
-        line-height: 1.4;
-        background: #fff;
-        color: var(--text);
+      textarea, input[type="text"], input[type="password"],
+      input[type="number"], input[type="time"], select {
+        width: 100%; box-sizing: border-box;
+        border: 2px solid #331818; border-radius: 0;
+        padding: 9px 10px; font-size: 13px; line-height: 1.4;
+        background: #0e0808; color: var(--text);
+        font-family: var(--pixel);
+      }
+      textarea:focus, input:focus, select:focus {
+        outline: none; border-color: #663333;
+        box-shadow: 0 0 0 1px var(--brand-glow);
       }
 
-      textarea {
-        min-height: 120px;
-        resize: vertical;
+      textarea { min-height: 100px; resize: vertical; }
+
+      input[type="checkbox"], input[type="radio"] {
+        width: 16px; height: 16px; accent-color: #cc1111;
       }
 
-      input[type="checkbox"],
-      input[type="radio"] {
-        width: 16px;
-        height: 16px;
-      }
+      .grid2 { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+      .grid3 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr; }
 
-      .grid2 {
-        display: grid;
-        gap: 12px;
-        grid-template-columns: 1fr 1fr;
-      }
-
-      .grid3 {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: 1fr 1fr 1fr;
-      }
-
-      .mode-grid {
-        display: grid;
-        gap: 10px;
-        grid-template-columns: 1fr 1fr 1fr;
-      }
+      .mode-grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr 1fr; }
 
       .mode-card {
-        border: 1px solid #d8e2f7;
-        border-radius: 8px;
-        background: #fbfdff;
-        padding: 10px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+        border: 2px solid #2a1515; padding: 10px;
+        background: #0e0808; display: flex; flex-direction: column; gap: 5px;
+        transition: border-color 0.15s;
       }
+      .mode-card:hover { border-color: #553333; }
+      .mode-card:has(input:checked) { border-color: #cc1111; background: #1a0c0c; }
 
-      .mode-title {
-        font-size: 14px;
-        font-weight: 700;
-      }
-
-      .mode-note {
-        color: #566b95;
-        font-size: 12px;
-        line-height: 1.6;
-      }
+      .mode-title { font-size: 13px; font-weight: 700; color: #ddaaaa; }
+      .mode-note { color: #886666; font-size: 11px; line-height: 1.6; }
 
       .time-rule {
-        border: 1px solid #d8e2f7;
-        border-radius: 8px;
-        padding: 12px;
-        margin-bottom: 10px;
-        background: #fbfdff;
+        border: 2px solid #2a1515; padding: 12px; margin-bottom: 10px;
+        background: #0e0808;
       }
+      .time-rule:last-child { margin-bottom: 0; }
 
-      .time-rule:last-child {
-        margin-bottom: 0;
-      }
+      .days { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+      .day { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #aa8888; }
 
-      .days {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px 10px;
-      }
-
-      .day {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        font-size: 12px;
-        color: #2f4369;
-      }
-
-      .rule-actions {
-        margin-top: 8px;
-        display: flex;
-        justify-content: flex-end;
-      }
-
+      .rule-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
       .rule-actions button {
-        border: 1px solid #d39ba4;
-        background: #fff3f5;
-        color: #7e2c39;
+        border: 1px solid #553333; background: #1a0808; color: #cc8888;
       }
 
-      .top-actions {
-        margin-bottom: 10px;
-      }
+      .top-actions { margin-bottom: 10px; }
 
-      .actions {
-        margin-top: 16px;
-        display: flex;
-        gap: 10px;
-      }
+      .actions { margin-top: 18px; display: flex; gap: 10px; }
 
       button {
-        border: 1px solid #95acd4;
-        border-radius: 6px;
-        padding: 9px 14px;
-        background: #f2f6ff;
-        color: #1d2f53;
-        font-size: 14px;
-        cursor: pointer;
+        border: 2px solid #442222; border-radius: 0;
+        padding: 10px 16px; background: #1a0e0e; color: #ddaaaa;
+        font-size: 13px; font-weight: 700; cursor: pointer;
+        font-family: var(--pixel); letter-spacing: 1px;
+        text-transform: uppercase;
       }
+      button:hover { background: #2a1414; border-color: #663333; }
+      button:active { transform: translate(1px, 1px); }
 
       button.primary {
         border-color: var(--brand-border);
-        background: var(--brand);
-        color: #fff;
+        background: var(--brand); color: #fff;
+        box-shadow: 3px 3px 0 #000;
       }
+      button.primary:hover { background: #dd2222; }
 
-      .status {
-        margin-top: 12px;
-        min-height: 22px;
-        color: #355184;
-      }
+      .status { margin-top: 12px; min-height: 22px; color: #aa7777; font-size: 12px; }
 
       .warn {
-        margin: 8px 0 0;
-        color: #904400;
-        background: var(--warn-bg);
-        border: 1px solid var(--warn-border);
-        border-radius: 6px;
-        padding: 8px 10px;
-        font-size: 12px;
-        line-height: 1.6;
-      }
-
-      .placeholder-list {
-        margin: 6px 0 0;
-        color: #445a85;
-        font-size: 12px;
-        line-height: 1.7;
-        word-break: break-word;
+        margin: 8px 0 0; color: #cc8800;
+        background: var(--warn-bg); border: 1px solid var(--warn-border);
+        padding: 8px 10px; font-size: 11px; line-height: 1.6;
       }
 
       .placeholder-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
-        margin-bottom: 6px;
+        display: flex; flex-wrap: wrap; gap: 6px;
+        align-items: center; margin-bottom: 6px;
       }
-
-      .placeholder-label {
-        font-size: 13px;
-        color: var(--sub);
-      }
-
+      .placeholder-label { font-size: 12px; color: var(--sub); }
       .placeholder-btn {
-        border: 1px solid #b8c7e3;
-        border-radius: 4px;
-        padding: 3px 10px;
-        background: #e8efff;
-        color: #274068;
-        font-size: 12px;
-        cursor: pointer;
-        transition: background 0.15s, border-color 0.15s;
-        user-select: none;
+        border: 1px solid #443333; border-radius: 0;
+        padding: 3px 10px; background: #1a0e0e;
+        color: #cc9999; font-size: 11px; cursor: pointer;
+        font-family: var(--pixel);
+        transition: background 0.1s;
       }
-
-      .placeholder-btn:hover {
-        background: #d0deff;
-        border-color: #8eaed6;
-      }
-
-      .placeholder-btn:active {
-        background: #b8cdff;
-      }
+      .placeholder-btn:hover { background: #2a1414; border-color: #664444; }
 
       .custom-overrides {
-        border-top: 1px dashed #d8e2f7;
-        padding-top: 10px;
-        margin-top: 10px;
+        border-top: 1px dashed #2a1515;
+        padding-top: 10px; margin-top: 10px;
+      }
+
+      .banner-preview {
+        margin: 8px 0; padding: 12px;
+        background: #0a0404; border: 2px solid #331111;
+        text-align: center; overflow: hidden;
+        font-size: 16px; font-weight: 900; color: #ff4444;
+        text-shadow: 2px 2px 0 #000;
+        letter-spacing: 4px; text-transform: uppercase;
       }
 
       @media (max-width: 860px) {
-        .grid2,
-        .grid3,
-        .mode-grid {
-          grid-template-columns: 1fr;
-        }
+        .grid2, .grid3, .mode-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
   <body>
     <main class="page">
-      <h1>B站学习模式守护 - 详细设置</h1>
-      <p class="intro">
-        这里统一配置判定模式、动作、AI Prompt、时段策略和密码锁。模式是互斥的：弱模式 / 强模式 / AI模式。
-      </p>
+      <h1>学习模式守护</h1>
+      <p class="intro">配置判定模式、动作、AI Prompt、拦截界面、时段策略和密码锁。</p>
 
       <section class="panel">
+        <!-- 判定模式与动作 -->
         <div class="section">
-          <h2 class="section-title">判定模式与动作</h2>
-          <p class="desc">
-            先选判定模式，再选动作。动作至少开启一个：拦截视频或隐藏封面。
-          </p>
-
+          <h2 class="section-title">判定模式</h2>
           <div class="mode-grid item">
             <label class="mode-card">
               <span class="row">
                 <input id="modeWeak" name="mode" type="radio" value="weak" />
-                <span class="mode-title">弱硬判断（weak）</span>
+                <span class="mode-title">弱模式</span>
               </span>
-              <span class="mode-note">仅匹配屏蔽词（黑名单），命中即判为非学习向。</span>
+              <span class="mode-note">匹配屏蔽词即拦截</span>
             </label>
-
             <label class="mode-card">
               <span class="row">
                 <input id="modeStrong" name="mode" type="radio" value="strong" />
-                <span class="mode-title">强硬判断（strong）</span>
+                <span class="mode-title">强模式</span>
               </span>
-              <span class="mode-note">仅匹配学习词（白名单），未命中即判为非学习向。</span>
+              <span class="mode-note">未命中学习词即拦截</span>
             </label>
-
             <label class="mode-card">
               <span class="row">
                 <input id="modeAi" name="mode" type="radio" value="ai" />
-                <span class="mode-title">AI判断（ai）</span>
+                <span class="mode-title">AI模式</span>
               </span>
-              <span class="mode-note">由AI判定学习向/非学习向，可叠加“先走屏蔽词过滤”。</span>
+              <span class="mode-note">AI判定娱乐向即拦截</span>
             </label>
           </div>
+        </div>
 
+        <!-- 动作 -->
+        <div class="section">
+          <h2 class="section-title">拦截动作</h2>
           <div class="item">
             <label class="row">
               <input id="actionBlockVideo" type="checkbox" />
-              <span>动作：拦截视频（进入视频页时阻断）</span>
+              <span>
+                拦截视频
+                <span class="tip">ⓘ<span class="tip-text">进入视频页时显示拦截页面</span></span>
+              </span>
             </label>
           </div>
-
           <div class="item">
             <label class="row">
               <input id="actionHideCover" type="checkbox" />
-              <span>动作：隐藏封面（首页/推荐/搜索流中隐藏）</span>
+              <span>
+                隐藏封面
+                <span class="tip">ⓘ<span class="tip-text">在首页/推荐/搜索流中隐藏卡片封面</span></span>
+              </span>
             </label>
           </div>
-
           <div class="item">
             <label class="row">
               <input id="autoNotInterestedEnabled" type="checkbox" />
-              <span>辅助行为：自动标记“不感兴趣”</span>
+              <span>
+                自动不感兴趣
+                <span class="tip">ⓘ<span class="tip-text">尽力执行，页面结构变化时可能偶发失效</span></span>
+              </span>
             </label>
-            <p class="hint">默认关闭。属于尽力执行，页面结构变化时可能偶发失效。</p>
           </div>
         </div>
 
+        <!-- 拦截界面横幅 -->
+        <div class="section">
+          <h2 class="section-title">拦截界面横幅</h2>
+          <div class="item">
+            <label class="row">
+              <input id="blockBannerEnabled" type="checkbox" />
+              <span>显示红色警示横幅</span>
+            </label>
+          </div>
+          <div class="item">
+            <label class="label" for="blockBannerText">横幅字样</label>
+            <input id="blockBannerText" type="text" placeholder="学习！" maxlength="20" />
+            <div class="banner-preview" id="bannerPreview">学习！</div>
+          </div>
+        </div>
+
+        <!-- 关键词库 -->
         <div class="section">
           <h2 class="section-title">关键词库</h2>
-          <p class="desc">
-            弱模式主要用屏蔽词，强模式主要用学习词，AI模式可选前置屏蔽词过滤。
-          </p>
-
           <div class="item">
-            <label class="label" for="allowKeywords">学习关键词（白名单）</label>
+            <label class="label" for="allowKeywords">
+              学习关键词（白名单）
+              <span class="tip">ⓘ<span class="tip-text">强模式基于它做放行判定，每行一个或逗号分隔</span></span>
+            </label>
             <textarea id="allowKeywords"></textarea>
-            <p class="hint">每行一个或逗号分隔。强模式会基于它做放行判定。</p>
           </div>
-
           <div class="item">
-            <label class="label" for="blockKeywords">屏蔽关键词（黑名单）</label>
+            <label class="label" for="blockKeywords">
+              屏蔽关键词（黑名单）
+              <span class="tip">ⓘ<span class="tip-text">弱模式与AI前置过滤基于它做拦截判定</span></span>
+            </label>
             <textarea id="blockKeywords"></textarea>
-            <p class="hint">每行一个或逗号分隔。弱模式与AI前置过滤会基于它做拦截判定。</p>
           </div>
         </div>
 
+        <!-- AI 判定 -->
         <div class="section">
-          <h2 class="section-title">AI 判定设置</h2>
-          <p class="desc">
-            AI模式会把标题、分区、标签、UP主等信息传给模型。你可以自定义 Prompt，并通过占位符注入字段。
-          </p>
-
+          <h2 class="section-title">AI 判定</h2>
           <div class="item">
             <label class="row">
               <input id="aiPreFilterBlockKeywords" type="checkbox" />
-              <span>AI模式先走屏蔽词过滤（命中黑名单直接判非学习向）</span>
+              <span>
+                AI先走屏蔽词过滤
+                <span class="tip">ⓘ<span class="tip-text">命中黑名单直接拦截，不调用AI</span></span>
+              </span>
             </label>
           </div>
-
           <div class="grid2">
             <div class="item">
-              <label class="label" for="aiApiUrl">AI API URL</label>
-              <input
-                id="aiApiUrl"
-                type="text"
-                placeholder="例如：https://api.deepseek.com"
-              />
-              <p class="hint">填写API的Base URL即可，系统会自动补全路径。如 https://api.deepseek.com 或 https://api.openai.com</p>
+              <label class="label" for="aiApiUrl">API URL</label>
+              <input id="aiApiUrl" type="text" placeholder="https://api.deepseek.com" />
             </div>
             <div class="item">
-              <label class="label" for="aiModel">AI Model</label>
-              <input id="aiModel" type="text" placeholder="例如：gpt-4o-mini" />
+              <label class="label" for="aiModel">Model</label>
+              <input id="aiModel" type="text" placeholder="deepseek-v4-flash" />
             </div>
             <div class="item">
-              <label class="label" for="aiApiKey">AI API Key</label>
+              <label class="label" for="aiApiKey">API Key</label>
               <input id="aiApiKey" type="password" placeholder="sk-..." />
             </div>
             <div class="item">
-              <label class="label" for="aiRequestTimeoutMs">AI请求超时（毫秒）</label>
+              <label class="label" for="aiRequestTimeoutMs">
+                超时（ms）
+                <span class="tip">ⓘ<span class="tip-text">AI请求超时时间，3000-30000毫秒</span></span>
+              </label>
               <input id="aiRequestTimeoutMs" type="number" min="3000" max="30000" step="1000" />
             </div>
           </div>
-
           <div class="item">
-            <label class="label" for="aiPrompt">AI Prompt 模板</label>
+            <label class="label" for="aiPrompt">Prompt 模板</label>
             <div class="placeholder-buttons" id="placeholderButtons">
-              <span class="placeholder-label">插入占位符：</span>
+              <span class="placeholder-label">插入：</span>
             </div>
             <textarea id="aiPrompt"></textarea>
-            <p class="hint">点击上方按钮可在光标位置插入对应占位符。系统会自动添加JSON输出格式要求，无需手动添加。</p>
           </div>
         </div>
 
+        <!-- 时段策略 -->
         <div class="section">
           <h2 class="section-title">时段策略</h2>
-          <p class="desc">
-            已精简为两种：完全禁止访问（block_all）和自定义（custom）。
-          </p>
-
           <div class="item">
             <label class="row">
               <input id="timeStrategyEnabled" type="checkbox" />
               <span>启用时段策略</span>
             </label>
           </div>
-
           <div class="top-actions">
-            <button id="addTimeRule" type="button">新增时段规则</button>
+            <button id="addTimeRule" type="button">新增规则</button>
           </div>
           <div id="timeRulesContainer"></div>
-          <p class="hint">
-            规则支持跨天（例如 22:00 - 06:00）。冲突时优先级：完全禁止访问 > 自定义；同级按列表顺序优先。
-          </p>
+          <p class="hint">支持跨天（如 22:00-06:00）。优先级：完全禁止 > 自定义；同级按列表顺序。</p>
         </div>
 
+        <!-- 密码锁 -->
         <div class="section">
           <h2 class="section-title">专注密码锁</h2>
-          <p class="desc">开启后，任何“降低专注度”的操作都需要密码。</p>
-
           <div class="item">
             <label class="row">
               <input id="focusLockEnabled" type="checkbox" />
-              <span>启用专注密码锁</span>
+              <span>
+                启用密码锁
+                <span class="tip">ⓘ<span class="tip-text">降低专注度的操作需要密码验证</span></span>
+              </span>
             </label>
           </div>
-
-          <div class="grid2">
+          <div class="grid3">
             <div class="item">
               <label class="label" for="newPassword">设置/更新密码</label>
-              <input id="newPassword" type="password" placeholder="留空表示不修改密码" />
+              <input id="newPassword" type="password" placeholder="留空不修改" />
             </div>
             <div class="item">
-              <label class="label" for="confirmPassword">确认新密码</label>
-              <input id="confirmPassword" type="password" placeholder="再次输入新密码" />
+              <label class="label" for="confirmPassword">确认密码</label>
+              <input id="confirmPassword" type="password" placeholder="再次输入" />
             </div>
             <div class="item">
-              <label class="label" for="unlockPassword">当前密码（用于降级或解锁操作）</label>
-              <input id="unlockPassword" type="password" placeholder="仅在需要时填写" />
+              <label class="label" for="unlockPassword">当前密码</label>
+              <input id="unlockPassword" type="password" placeholder="降级时需要" />
             </div>
           </div>
-
-          <p class="warn">建议让他人帮你设置密码，并且不要告诉你本人，这样专注效果更稳。</p>
+          <p class="warn">建议让他人设置密码且不告诉你，专注效果更稳。</p>
         </div>
 
         <div class="actions">

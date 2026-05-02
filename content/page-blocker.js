@@ -21,7 +21,7 @@ function setScrollLocked(locked, state) {
 
 function blockPage(rawResult, state) {
   const result = normalizeDecision(rawResult);
-  const overlay = ensureOverlay();
+  const overlay = ensureOverlay(state.settings.blockBannerEnabled, state.settings.blockBannerText);
   if (!overlay) return;
 
   const titleEl = overlay.querySelector("h1");

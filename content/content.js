@@ -11,7 +11,7 @@ const STATE = {
   cardScanQueued: false,
   cardObserver: null,
   decisionCache: new Map(),
-  settings: { actionHideCover: false, autoNotInterestedEnabled: false },
+  settings: { actionHideCover: false, autoNotInterestedEnabled: false, blockBannerEnabled: true, blockBannerText: "学习！" },
   notInterestedHandled: new Set()
 };
 
@@ -20,9 +20,13 @@ async function refreshRuntimeSettings() {
   if (response?.ok && response.settings && typeof response.settings === "object") {
     STATE.settings.actionHideCover = response.settings.actionHideCover === true;
     STATE.settings.autoNotInterestedEnabled = response.settings.autoNotInterestedEnabled === true;
+    STATE.settings.blockBannerEnabled = response.settings.blockBannerEnabled !== false;
+    STATE.settings.blockBannerText = String(response.settings.blockBannerText || "学习！");
   } else {
     STATE.settings.actionHideCover = false;
     STATE.settings.autoNotInterestedEnabled = false;
+    STATE.settings.blockBannerEnabled = true;
+    STATE.settings.blockBannerText = "学习！";
   }
 }
 

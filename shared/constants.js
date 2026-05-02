@@ -16,6 +16,8 @@ const DEFAULT_SETTINGS = Object.freeze({
   mode: "strong",
   actionBlockVideo: true,
   actionHideCover: false,
+  blockBannerEnabled: true,
+  blockBannerText: "学习！",
   allowKeywords: [...DEFAULT_ALLOW_KEYWORDS],
   blockKeywords: [...DEFAULT_BLOCK_KEYWORDS],
   aiPreFilterBlockKeywords: true,

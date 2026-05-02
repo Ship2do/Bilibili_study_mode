@@ -41,6 +41,8 @@ const DEFAULT_SETTINGS = {
   mode: "strong",
   actionBlockVideo: true,
   actionHideCover: false,
+  blockBannerEnabled: true,
+  blockBannerText: "学习！",
   allowKeywords: DEFAULT_ALLOW_KEYWORDS,
   blockKeywords: DEFAULT_BLOCK_KEYWORDS,
   aiPreFilterBlockKeywords: true,
@@ -81,6 +83,10 @@ const modeInputs = Array.from(document.querySelectorAll("input[name='mode']"));
 const actionBlockVideoInput = document.getElementById("actionBlockVideo");
 const actionHideCoverInput = document.getElementById("actionHideCover");
 const autoNotInterestedEnabledInput = document.getElementById("autoNotInterestedEnabled");
+
+const blockBannerEnabledInput = document.getElementById("blockBannerEnabled");
+const blockBannerTextInput = document.getElementById("blockBannerText");
+const bannerPreview = document.getElementById("bannerPreview");
 
 const allowKeywordsInput = document.getElementById("allowKeywords");
 const blockKeywordsInput = document.getElementById("blockKeywords");
@@ -392,6 +398,10 @@ function fillForm(settings) {
   actionHideCoverInput.checked = currentSettings.actionHideCover === true;
   autoNotInterestedEnabledInput.checked = currentSettings.autoNotInterestedEnabled === true;
 
+  blockBannerEnabledInput.checked = currentSettings.blockBannerEnabled !== false;
+  blockBannerTextInput.value = String(currentSettings.blockBannerText || "学习！");
+  if (bannerPreview) bannerPreview.textContent = blockBannerTextInput.value || "学习！";
+
   allowKeywordsInput.value = (currentSettings.allowKeywords || []).join("\n");
   blockKeywordsInput.value = (currentSettings.blockKeywords || []).join("\n");
 
@@ -483,6 +493,8 @@ function buildPayload() {
     actionBlockVideo,
     actionHideCover,
     autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
+    blockBannerEnabled: blockBannerEnabledInput.checked,
+    blockBannerText: String(blockBannerTextInput.value || "").trim() || "学习！",
     allowKeywords,
     blockKeywords,
     aiPreFilterBlockKeywords: aiPreFilterBlockKeywordsInput.checked,
@@ -657,3 +669,9 @@ const PLACEHOLDER_DEFS = [
     container.appendChild(btn);
   }
 })();
+
+if (blockBannerTextInput && bannerPreview) {
+  blockBannerTextInput.addEventListener("input", () => {
+    bannerPreview.textContent = blockBannerTextInput.value || "学习！";
+  });
+}
