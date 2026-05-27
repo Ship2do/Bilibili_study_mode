@@ -1,4 +1,4 @@
-# B站学习模式守护（Edge 扩展）
+# B站学习模式守护（Edge 扩展）[![Edge 商店](https://img.shields.io/badge/Edge-扩展商店-blue.svg)](https://microsoftedge.microsoft.com/addons/detail/jachmidhanilfknhankklemigokhpbkm)
 
 用于学习场景的反分心扩展，支持互斥判定模式、统一动作策略、AI自定义Prompt、时段策略、密码保护、直播拦截。
 
