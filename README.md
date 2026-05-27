@@ -86,6 +86,12 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 
 ## 安装
 
+### Edge 浏览器（推荐）
+
+[![Edge 商店](https://img.shields.io/badge/Edge-扩展商店-blue.svg)](https://microsoftedge.microsoft.com/addons/detail/jachmidhanilfknhankklemigokhpbkm)
+
+### 本地安装
+
 1. 打开 `edge://extensions/`
 2. 开启"开发人员模式"
 3. 点击"加载解压缩的扩展"
