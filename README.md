@@ -2,21 +2,9 @@
 
 <img src="preview/hero.png" alt="B站学习模式守护" width="100%">
 
-<br><br>
-
 **打开B站是为了找网课，两小时后你还在看鬼畜。**
-
-这个扩展帮你把那两小时拿回来。
-
-<br>
-
-[![Edge 加载项](https://img.shields.io/badge/Edge%20加载项-立即安装-0078D7?style=for-the-badge&logo=microsoftedge&logoColor=white)](https://microsoftedge.microsoft.com/addons/detail/jachmidhanilfknhankklemigokhpbkm)
-
-![版本](https://img.shields.io/badge/版本-2.2.1-d13438?style=flat-square)
-![Manifest V3](https://img.shields.io/badge/Manifest-V3-555?style=flat-square)
-![浏览器](https://img.shields.io/badge/Edge%20%2F%20Chrome-123%2B-0078D7?style=flat-square)
-[![Star](https://img.shields.io/github/stars/Ship2do/Bilibili_study_mode?style=flat-square&logo=github&label=Star)](https://github.com/Ship2do/Bilibili_study_mode/stargazers)
-[![最近提交](https://img.shields.io/github/last-commit/Ship2do/Bilibili_study_mode?style=flat-square)](https://github.com/Ship2do/Bilibili_study_mode/commits/main)
+这个插件帮你把那两小时拿回来。
+[![Edge 商店](https://img.shields.io/badge/Edge-扩展商店-blue.svg)](https://microsoftedge.microsoft.com/addons/detail/jachmidhanilfknhankklemigokhpbkm)
 
 </div>
 
