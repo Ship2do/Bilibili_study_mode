@@ -3,6 +3,7 @@ const openOptionsButton = document.getElementById("openOptions");
 const resetButton = document.getElementById("reset");
 const quickModeSelect = document.getElementById("quickMode");
 const toggles = Array.from(document.querySelectorAll("input[type='checkbox'][data-key]"));
+const themeInputs = Array.from(document.querySelectorAll("input[name='uiTheme']"));
 
 let currentSettings = null;
 
@@ -50,6 +51,10 @@ function applySettingsToView(settings) {
     input.checked = !!(settings && settings[key] === true);
   }
   quickModeSelect.value = normalizeMode(settings && settings.mode);
+
+  const theme = ["auto", "light", "dark"].includes(settings && settings.uiTheme) ? settings.uiTheme : "auto";
+  for (const input of themeInputs) input.checked = input.value === theme;
+  applyTheme(settings || {});
 }
 
 async function loadSettings() {
@@ -144,6 +149,22 @@ quickModeSelect.addEventListener("change", async () => {
 
   showStatus(`已切换到${modeLabel(nextMode)}`);
 });
+
+for (const input of themeInputs) {
+  input.addEventListener("change", async () => {
+    if (!input.checked || !currentSettings) return;
+    const previousSettings = { ...currentSettings };
+    // 主题是纯样式，先本地生效再落库，切换手感即时
+    applyTheme({ ...currentSettings, uiTheme: input.value });
+    const result = await savePatch({ uiTheme: input.value }, previousSettings);
+    if (!result.ok) {
+      applySettingsToView(previousSettings);
+      showStatus(result.error || "保存失败");
+      return;
+    }
+    showStatus("主题已切换");
+  });
+}
 
 openOptionsButton.addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "OPEN_OPTIONS" });

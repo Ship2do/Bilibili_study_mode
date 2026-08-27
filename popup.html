@@ -4,108 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>B站学习模式守护</title>
-    <style>
-      :root {
-        --bg: #1a1a2e;
-        --panel: #22223a;
-        --text: #d0d0e8;
-        --sub: #8888aa;
-        --line: #333355;
-        --brand: #cc2222;
-        --brand-border: #ff4444;
-        --pixel: 'Courier New', 'Consolas', monospace;
-      }
-
-      * { box-sizing: border-box; }
-
-      body {
-        margin: 0; width: 320px;
-        background: var(--bg); color: var(--text);
-        font-family: var(--pixel); font-size: 13px;
-      }
-
-      .wrap { padding: 16px 14px; }
-
-      h1 {
-        margin: 0 0 14px; font-size: 18px; font-weight: 900;
-        color: #ff4444; text-transform: uppercase; letter-spacing: 3px;
-        text-shadow: 2px 2px 0 #000;
-        text-align: center;
-      }
-
-      .section {
-        margin-bottom: 12px; padding-bottom: 10px;
-        border-bottom: 1px solid var(--line);
-      }
-      .section:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
-
-      .section-label {
-        margin: 0 0 8px; font-size: 11px; font-weight: 700;
-        color: #ff6666; text-transform: uppercase; letter-spacing: 2px;
-      }
-
-      .feature {
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 10px; padding: 6px 0;
-      }
-
-      .name { font-size: 13px; font-weight: 700; color: #bbbbdd; }
-
-      .mode-select {
-        width: 150px;
-        border: 2px solid #3a3a5c; border-radius: 0;
-        padding: 6px 8px; font-size: 12px;
-        background: #16162a; color: var(--text);
-        font-family: var(--pixel);
-      }
-      .mode-select:focus { outline: none; border-color: #7777aa; }
-
-      .switch {
-        width: 42px; height: 22px; position: relative; flex: 0 0 auto;
-      }
-      .switch input { opacity: 0; width: 0; height: 0; }
-      .slider {
-        position: absolute; inset: 0;
-        background: #2e2e50; cursor: pointer; transition: 0.15s;
-        border: 1px solid #555577;
-      }
-      .slider::before {
-        content: ""; position: absolute;
-        width: 16px; height: 16px; left: 2px; top: 2px;
-        background: #8888aa; transition: 0.15s;
-      }
-      input:checked + .slider { background: #cc2222; border-color: #ff4444; }
-      input:checked + .slider::before {
-        transform: translateX(20px); background: #fff;
-      }
-
-      .actions {
-        margin-top: 14px; display: grid;
-        grid-template-columns: 1fr 1fr; gap: 8px;
-      }
-
-      button {
-        border: 2px solid #555577; border-radius: 0;
-        padding: 8px 10px; background: #2a2a48; color: #bbbbdd;
-        font-size: 12px; font-weight: 700; cursor: pointer;
-        font-family: var(--pixel); letter-spacing: 1px;
-        text-transform: uppercase;
-      }
-      button:hover { background: #3a3a5c; border-color: #7777aa; }
-      button:active { transform: translate(1px, 1px); }
-
-      button.primary {
-        border-color: var(--brand-border);
-        background: var(--brand); color: #fff;
-        box-shadow: 3px 3px 0 #000;
-      }
-      button.primary:hover { background: #dd3333; }
-
-      .status {
-        margin-top: 10px; min-height: 18px;
-        color: #666688; font-size: 11px;
-      }
-    </style>
+    <link rel="stylesheet" href="ui/tokens.css" />
+    <link rel="stylesheet" href="ui/base.css" />
+    <link rel="stylesheet" href="ui/popup.css" />
   </head>
   <body>
     <div class="wrap">
@@ -165,6 +66,24 @@
         </div>
       </div>
 
+      <div class="section">
+        <p class="section-label">主题</p>
+        <div class="theme-switch" id="themeSwitch">
+          <label class="theme-option">
+            <input type="radio" name="uiTheme" value="auto" />
+            <span>跟随系统</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="uiTheme" value="light" />
+            <span>亮色</span>
+          </label>
+          <label class="theme-option">
+            <input type="radio" name="uiTheme" value="dark" />
+            <span>暗色</span>
+          </label>
+        </div>
+      </div>
+
       <div class="actions">
         <button class="primary" id="openOptions">详细设置</button>
         <button id="reset">恢复默认</button>
@@ -172,6 +91,7 @@
       <div class="status" id="status"></div>
     </div>
 
+    <script src="ui/theme.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

@@ -4,240 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>B站学习模式守护 - 设置</title>
-    <style>
-      :root {
-        --bg: #1a1a2e;
-        --panel: #22223a;
-        --text: #d0d0e8;
-        --sub: #8888aa;
-        --line: #333355;
-        --line-soft: #2a2a48;
-        --brand: #cc2222;
-        --brand-border: #ff4444;
-        --brand-glow: rgba(220, 38, 38, 0.15);
-        --warn-bg: #2a2210;
-        --warn-border: #886622;
-        --chip-bg: #2e2e50;
-        --chip-border: #555577;
-        --chip-hover: #cc2222;
-        --input-bg: #16162a;
-        --input-border: #3a3a5c;
-        --pixel: 'Courier New', 'Consolas', monospace;
-      }
-
-      * { box-sizing: border-box; }
-
-      body {
-        margin: 0; background: var(--bg); color: var(--text);
-        font-family: var(--pixel); font-size: 13px;
-      }
-
-      .page { max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; }
-
-      h1 {
-        margin: 0 0 6px; font-size: 26px; font-weight: 900;
-        color: #ff4444; text-transform: uppercase; letter-spacing: 4px;
-        text-shadow: 2px 2px 0 #000;
-      }
-
-      .intro { margin: 0 0 20px; color: var(--sub); line-height: 1.7; font-size: 12px; }
-
-      .panel {
-        background: var(--panel);
-        border: 2px solid #444466;
-        padding: 20px;
-      }
-
-      .section {
-        margin-bottom: 18px; padding-bottom: 16px;
-        border-bottom: 1px solid var(--line);
-      }
-      .section:last-of-type { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
-
-      .section-title {
-        margin: 0 0 10px; font-size: 15px; font-weight: 900;
-        color: #ff6666; text-transform: uppercase; letter-spacing: 2px;
-      }
-
-      .desc {
-        margin: 0 0 10px; color: var(--sub);
-        font-size: 11px; line-height: 1.7;
-      }
-
-      .item { margin-bottom: 12px; }
-      .item:last-child { margin-bottom: 0; }
-
-      .row { display: flex; align-items: center; gap: 8px; }
-
-      .label {
-        display: block; margin: 0 0 6px;
-        font-size: 13px; font-weight: 700; color: #bbbbdd;
-      }
-
-      .tip {
-        position: relative; cursor: help;
-        border-bottom: 1px dashed #555577;
-      }
-      .tip .tip-text {
-        visibility: hidden; opacity: 0;
-        position: absolute; left: 0; top: 100%;
-        background: #2a2a48; border: 1px solid #555577;
-        color: #aaaacc; font-size: 11px; line-height: 1.6;
-        padding: 8px 10px; min-width: 220px; max-width: 340px;
-        z-index: 100; pointer-events: none;
-        transition: opacity 0.15s;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      }
-      .tip:hover .tip-text { visibility: visible; opacity: 1; }
-
-      .hint {
-        margin: 6px 0 0; color: #666688;
-        font-size: 11px; line-height: 1.6;
-      }
-
-      textarea, input[type="text"], input[type="password"],
-      input[type="number"], input[type="time"], select {
-        width: 100%; box-sizing: border-box;
-        border: 2px solid var(--input-border); border-radius: 0;
-        padding: 9px 10px; font-size: 13px; line-height: 1.4;
-        background: var(--input-bg); color: var(--text);
-        font-family: var(--pixel);
-      }
-      textarea:focus, input:focus, select:focus {
-        outline: none; border-color: #7777aa;
-        box-shadow: 0 0 0 1px rgba(120,120,180,0.2);
-      }
-
-      textarea { min-height: 100px; resize: vertical; }
-
-      input[type="checkbox"], input[type="radio"] {
-        width: 16px; height: 16px; accent-color: #cc2222;
-      }
-
-      .grid2 { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
-      .grid3 { display: grid; gap: 10px; grid-template-columns: 1fr 1fr 1fr; }
-
-      .mode-grid { display: grid; gap: 8px; grid-template-columns: 1fr 1fr 1fr; }
-
-      .mode-card {
-        border: 2px solid #3a3a5c; padding: 10px;
-        background: var(--input-bg); display: flex; flex-direction: column; gap: 5px;
-        transition: border-color 0.15s;
-      }
-      .mode-card:hover { border-color: #6666aa; }
-      .mode-card:has(input:checked) { border-color: #cc2222; background: #221122; }
-
-      .mode-title { font-size: 13px; font-weight: 700; color: #bbbbdd; }
-      .mode-note { color: #7777aa; font-size: 11px; line-height: 1.6; }
-
-      .time-rule {
-        border: 2px solid #3a3a5c; padding: 12px; margin-bottom: 10px;
-        background: var(--input-bg);
-      }
-      .time-rule:last-child { margin-bottom: 0; }
-
-      .days { display: flex; flex-wrap: wrap; gap: 8px 10px; }
-      .day { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: #8888aa; }
-
-      .rule-actions { margin-top: 8px; display: flex; justify-content: flex-end; }
-      .rule-actions button {
-        border: 1px solid #555577; background: #2a2a48; color: #aaaacc;
-      }
-
-      .top-actions { margin-bottom: 10px; }
-
-      .actions { margin-top: 18px; display: flex; gap: 10px; }
-
-      button {
-        border: 2px solid #555577; border-radius: 0;
-        padding: 10px 16px; background: #2a2a48; color: #bbbbdd;
-        font-size: 13px; font-weight: 700; cursor: pointer;
-        font-family: var(--pixel); letter-spacing: 1px;
-        text-transform: uppercase;
-      }
-      button:hover { background: #3a3a5c; border-color: #7777aa; }
-      button:active { transform: translate(1px, 1px); }
-
-      button.primary {
-        border-color: var(--brand-border);
-        background: var(--brand); color: #fff;
-        box-shadow: 3px 3px 0 #000;
-      }
-      button.primary:hover { background: #dd3333; }
-
-      .status { margin-top: 12px; min-height: 22px; color: #7777aa; font-size: 12px; }
-
-      .warn {
-        margin: 8px 0 0; color: #ccaa44;
-        background: var(--warn-bg); border: 1px solid var(--warn-border);
-        padding: 8px 10px; font-size: 11px; line-height: 1.6;
-      }
-
-      /* Keyword chips */
-      .chips-wrap {
-        display: flex; flex-wrap: wrap; gap: 6px;
-        padding: 8px; min-height: 42px;
-        border: 2px solid var(--input-border);
-        background: var(--input-bg);
-        cursor: text;
-      }
-      .chips-wrap:focus-within {
-        border-color: #7777aa;
-        box-shadow: 0 0 0 1px rgba(120,120,180,0.2);
-      }
-      .chip {
-        display: inline-flex; align-items: center; gap: 4px;
-        padding: 3px 8px;
-        background: var(--chip-bg); border: 1px solid var(--chip-border);
-        font-size: 12px; color: #ccccdd;
-        font-family: var(--pixel);
-        transition: border-color 0.1s;
-      }
-      .chip:hover { border-color: var(--chip-hover); }
-      .chip .chip-x {
-        display: none; cursor: pointer; font-size: 11px; font-weight: 900;
-        color: #ff6666; margin-left: 2px; line-height: 1;
-      }
-      .chip:hover .chip-x { display: inline; }
-      .chip .chip-x:hover { color: #ff3333; }
-      .chip-input {
-        border: none; outline: none; background: transparent;
-        color: var(--text); font-family: var(--pixel); font-size: 12px;
-        min-width: 60px; flex: 1; padding: 2px 0;
-      }
-
-      .placeholder-buttons {
-        display: flex; flex-wrap: wrap; gap: 6px;
-        align-items: center; margin-bottom: 6px;
-      }
-      .placeholder-label { font-size: 12px; color: var(--sub); }
-      .placeholder-btn {
-        border: 1px solid #555577; border-radius: 0;
-        padding: 3px 10px; background: #2a2a48;
-        color: #aaaacc; font-size: 11px; cursor: pointer;
-        font-family: var(--pixel);
-        transition: background 0.1s;
-      }
-      .placeholder-btn:hover { background: #3a3a5c; border-color: #7777aa; }
-
-      .custom-overrides {
-        border-top: 1px dashed #3a3a5c;
-        padding-top: 10px; margin-top: 10px;
-      }
-
-      .banner-preview {
-        margin: 8px 0; padding: 12px;
-        background: #1a1a30; border: 2px solid #444466;
-        text-align: center; overflow: hidden;
-        font-size: 16px; font-weight: 900; color: #ff4444;
-        text-shadow: 2px 2px 0 #000;
-        letter-spacing: 4px; text-transform: uppercase;
-      }
-
-      @media (max-width: 860px) {
-        .grid2, .grid3, .mode-grid { grid-template-columns: 1fr; }
-      }
-    </style>
+    <link rel="stylesheet" href="ui/tokens.css" />
+    <link rel="stylesheet" href="ui/base.css" />
+    <link rel="stylesheet" href="ui/options.css" />
   </head>
   <body>
     <main class="page">
@@ -303,6 +72,45 @@
               </span>
             </label>
           </div>
+        </div>
+
+        <!-- 外观 -->
+        <div class="section">
+          <h2 class="section-title">外观</h2>
+          <div class="grid3">
+            <div class="item">
+              <label class="label" for="uiTheme">主题</label>
+              <select id="uiTheme">
+                <option value="auto">跟随系统</option>
+                <option value="light">亮色</option>
+                <option value="dark">暗色</option>
+              </select>
+            </div>
+            <div class="item">
+              <label class="label" for="uiFont">字体</label>
+              <select id="uiFont">
+                <option value="system">系统默认</option>
+                <option value="serif">衬线</option>
+                <option value="mono">等宽</option>
+              </select>
+            </div>
+            <div class="item">
+              <label class="label" for="uiRadius">圆角</label>
+              <select id="uiRadius">
+                <option value="sharp">直角</option>
+                <option value="soft">适中</option>
+                <option value="round">圆润</option>
+              </select>
+            </div>
+          </div>
+          <div class="item">
+            <label class="label">
+              强调色
+              <span class="tip">ⓘ<span class="tip-text">同时作用于设置页、弹出面板和拦截界面</span></span>
+            </label>
+            <div class="accent-row" id="accentRow"></div>
+          </div>
+          <p class="hint">外观设置属于纯样式，即使开启了专注密码锁也可以随时修改。</p>
         </div>
 
         <!-- 拦截界面横幅 -->
@@ -441,6 +249,7 @@
     </main>
 
     <script src="shared/constants.js"></script>
+    <script src="ui/theme.js"></script>
     <script src="options.js"></script>
   </body>
 </html>

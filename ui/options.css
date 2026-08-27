@@ -1,0 +1,224 @@
+/* 设置页专属布局。通用组件在 ui/base.css，颜色令牌在 ui/tokens.css。 */
+
+.page {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--s7) var(--s5) var(--s7);
+}
+
+.page > h1 { margin-bottom: var(--s2); }
+.intro { margin-bottom: var(--s6); color: var(--text-sub); font-size: 13px; }
+
+.panel { padding: var(--s6); }
+
+.section { padding-bottom: var(--s6); margin-bottom: var(--s6); border-bottom: 1px solid var(--border); }
+.section:last-of-type { padding-bottom: 0; margin-bottom: var(--s5); border-bottom: 0; }
+
+.section-title {
+  margin-bottom: var(--s4);
+  color: var(--text);
+  font-size: 15px;
+}
+.section-title::before {
+  content: "";
+  display: inline-block;
+  width: 3px; height: 14px;
+  margin-right: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  vertical-align: -2px;
+}
+
+.item { margin-bottom: var(--s4); }
+.item:last-child { margin-bottom: 0; }
+
+.grid2, .grid3, .mode-grid { display: grid; gap: var(--s4); }
+.grid2 { grid-template-columns: repeat(2, 1fr); }
+.grid3 { grid-template-columns: repeat(3, 1fr); }
+.mode-grid { grid-template-columns: repeat(3, 1fr); }
+
+/* ── 判定模式卡 ──
+ * 选中态用背景 + inset 描边，不改 border 宽度，避免选中时产生 1px 布局位移。 */
+.mode-card {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.mode-card:hover { background: var(--surface-hover); }
+.mode-card:has(input:checked) {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.mode-card:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mode-title { font-size: 14px; font-weight: 650; }
+.mode-note { color: var(--text-sub); font-size: 12px; line-height: 1.5; }
+
+/* ── 强模式关键词过少的动态警示 ── */
+.mode-alert { margin-top: var(--s3); }
+.mode-alert[hidden] { display: none; }
+
+/* ── AI Prompt 占位符按钮 ── */
+.placeholder-buttons {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2);
+  margin-bottom: var(--s2);
+}
+.placeholder-label { color: var(--text-muted); font-size: 12px; }
+.placeholder-btn {
+  padding: 3px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ── 时段规则卡 ── */
+.time-rule {
+  padding: var(--s4);
+  margin-bottom: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.rule-actions { display: flex; justify-content: flex-end; margin-top: var(--s3); }
+.remove-rule {
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 35%, var(--border));
+}
+.remove-rule:hover:not(:disabled) { background: var(--danger-bg); border-color: var(--danger); }
+.top-actions { margin-bottom: var(--s3); }
+
+.days { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.day {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: 12px;
+  cursor: pointer;
+}
+.day:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+
+.custom-overrides {
+  padding-top: var(--s3);
+  margin-top: var(--s3);
+  border-top: 1px dashed var(--border-strong);
+}
+
+/* ── 横幅字样预览 ──
+ * 用与拦截界面同色系的警示条呈现，让「横幅长什么样」在设置页就能看到。 */
+.banner-preview {
+  display: flex; align-items: center; justify-content: center;
+  height: 34px;
+  margin-top: var(--s2);
+  border-radius: var(--r-sm);
+  background: light-dark(#d13438, #b3282c);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, .45);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ── 拦截外观预览 ── */
+.preview-frame {
+  position: relative;
+  height: 132px;
+  margin-top: var(--s2);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: #0d0f13;
+}
+.preview-note { margin-top: var(--s2); }
+
+/* 呈现方式选择：三张小卡 */
+.presentation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
+.presentation-card {
+  display: flex; flex-direction: column; gap: var(--s2);
+  padding: var(--s3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+}
+.presentation-card:has(input:checked) { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.presentation-figure {
+  position: relative;
+  height: 52px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.presentation-figure::before {
+  content: "";
+  position: absolute;
+  background: color-mix(in oklab, var(--text) 55%, transparent);
+}
+.presentation-card[data-kind="overlay"] .presentation-figure::before { inset: 0; }
+.presentation-card[data-kind="card"] .presentation-figure::before { inset: 22% 18%; border-radius: 4px; }
+.presentation-card[data-kind="toast"] .presentation-figure::before { inset: 6% 18% auto; height: 26%; border-radius: 4px; }
+
+/* ── 强度区块的锁标记 ── */
+.locked-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px var(--s2);
+  margin-left: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: 1px;
+}
+
+/* ── 滑块与档位标签 ── */
+.slider-row { display: flex; align-items: center; gap: var(--s3); }
+.slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+.tier-label {
+  min-width: 84px;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ── 强调色选择 ── */
+.accent-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.accent-swatch { position: relative; width: 30px; height: 30px; }
+.accent-swatch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.accent-dot {
+  display: block;
+  width: 100%; height: 100%;
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 2px var(--surface);
+  pointer-events: none;
+}
+/* 色块用与 tokens.css 相同的 light-dark() 取值，显示的就是当前明暗下的真实颜色 */
+.accent-dot[data-accent="crimson"] { background: light-dark(#d13438, #ff6b6e); }
+.accent-dot[data-accent="indigo"]  { background: light-dark(#4f46e5, #818cf8); }
+.accent-dot[data-accent="teal"]    { background: light-dark(#0d9488, #2dd4bf); }
+.accent-dot[data-accent="amber"]   { background: light-dark(#b45309, #fbbf24); }
+.accent-dot[data-accent="rose"]    { background: light-dark(#be185d, #f472b6); }
+.accent-dot[data-accent="slate"]   { background: light-dark(#475569, #94a3b8); }
+
+.accent-swatch input:checked + .accent-dot { border-color: var(--text); }
+.accent-swatch input:focus-visible + .accent-dot { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ── 底部动作与状态 ── */
+.actions { display: flex; gap: var(--s3); }
+.status { margin-top: var(--s3); min-height: 20px; color: var(--text-sub); font-size: 13px; }
+
+@media (max-width: 860px) {
+  .page { padding: var(--s5) var(--s4); }
+  .panel { padding: var(--s4); }
+  .grid2, .grid3, .mode-grid, .presentation-grid { grid-template-columns: 1fr; }
+  .col-span-2 { grid-column: auto; }
+}

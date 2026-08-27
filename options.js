@@ -51,6 +51,11 @@ const aiRequestTimeoutMsInput = document.getElementById("aiRequestTimeoutMs");
 const aiPromptInput = document.getElementById("aiPrompt");
 const aiPermissionHint = document.getElementById("aiPermissionHint");
 
+const uiThemeInput = document.getElementById("uiTheme");
+const uiFontInput = document.getElementById("uiFont");
+const uiRadiusInput = document.getElementById("uiRadius");
+const accentRow = document.getElementById("accentRow");
+
 const timeStrategyEnabledInput = document.getElementById("timeStrategyEnabled");
 const addTimeRuleButton = document.getElementById("addTimeRule");
 const timeRulesContainer = document.getElementById("timeRulesContainer");
@@ -165,6 +170,67 @@ function setupChipInput(wrap, input) {
 setupChipInput(allowChipsWrap, allowChipInput);
 setupChipInput(blockChipsWrap, blockChipInput);
 
+// ── 外观 ──
+
+const ACCENT_OPTIONS = [
+  { value: "crimson", label: "绯红" },
+  { value: "indigo", label: "靛蓝" },
+  { value: "teal", label: "青碧" },
+  { value: "amber", label: "琥珀" },
+  { value: "rose", label: "玫红" },
+  { value: "slate", label: "石墨" }
+];
+
+function renderAccentOptions() {
+  accentRow.innerHTML = "";
+  for (const option of ACCENT_OPTIONS) {
+    const swatch = document.createElement("label");
+    swatch.className = "accent-swatch";
+    swatch.title = option.label;
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "uiAccent";
+    input.value = option.value;
+    input.addEventListener("change", previewAppearance);
+
+    // 色块本身也走 tokens.css 的 light-dark()，这样它显示的就是当前明暗下的真实颜色
+    const dot = document.createElement("span");
+    dot.className = "accent-dot";
+    dot.dataset.accent = option.value;
+
+    swatch.append(input, dot);
+    accentRow.appendChild(swatch);
+  }
+}
+
+function getSelectedAccent() {
+  const checked = accentRow.querySelector("input:checked");
+  return checked ? checked.value : "crimson";
+}
+
+function setSelectedAccent(value) {
+  const normalized = String(value || "crimson").trim().toLowerCase();
+  const inputs = Array.from(accentRow.querySelectorAll("input"));
+  const match = inputs.find(input => input.value === normalized) || inputs[0];
+  for (const input of inputs) input.checked = input === match;
+}
+
+// 外观是纯样式，改了立刻生效，不必先保存——所见即所得
+function previewAppearance() {
+  applyTheme({
+    uiTheme: uiThemeInput.value,
+    uiFont: uiFontInput.value,
+    uiRadius: uiRadiusInput.value,
+    uiAccent: getSelectedAccent()
+  });
+}
+
+renderAccentOptions();
+for (const input of [uiThemeInput, uiFontInput, uiRadiusInput]) {
+  input.addEventListener("change", previewAppearance);
+}
+
 // ── Time rules ──
 
 function createEmptyRule() {
@@ -227,23 +293,23 @@ function createRuleElement(rule) {
       <div class="item">
         <label class="row"><input type="checkbox" class="rule-enabled" ${rule.enabled !== false ? "checked" : ""} />启用该时段</label>
       </div>
-      <div class="item" style="grid-column: span 2;">
+      <div class="item col-span-2">
         <label class="label">时段策略</label>
         <select class="rule-mode">${ruleModeOptions}</select>
       </div>
     </div>
-    <div class="custom-overrides" style="display: ${isCustom ? "block" : "none"};">
-      <div class="grid2" style="margin-bottom: 8px;">
+    <div class="custom-overrides${isCustom ? "" : " is-hidden"}">
+      <div class="grid2 mb-2">
         <div class="item">
           <label class="label">判定模式</label>
           <select class="override-decision-mode">${decisionModeOptions}</select>
         </div>
       </div>
-      <div class="row" style="margin-bottom: 6px; flex-wrap: wrap;">
-        <label class="row" style="margin-right: 12px;">
+      <div class="row row-wrap mb-2">
+        <label class="row">
           <input type="checkbox" class="override-action-block" ${actionBlockVideo ? "checked" : ""} /> 拦截视频
         </label>
-        <label class="row" style="margin-right: 12px;">
+        <label class="row">
           <input type="checkbox" class="override-action-hide" ${actionHideCover ? "checked" : ""} /> 隐藏封面
         </label>
         <label class="row">
@@ -252,7 +318,7 @@ function createRuleElement(rule) {
       </div>
       <p class="hint">自定义时段同样要求至少开启一个动作。</p>
     </div>
-    <div class="item" style="margin-top: 10px;">
+    <div class="item mt-3">
       <label class="label">生效星期</label>
       <div class="days">${dayHtml}</div>
     </div>
@@ -264,7 +330,7 @@ function createRuleElement(rule) {
   const modeSelect = wrapper.querySelector(".rule-mode");
   const overridesPanel = wrapper.querySelector(".custom-overrides");
   modeSelect.addEventListener("change", (e) => {
-    overridesPanel.style.display = e.target.value === "custom" ? "block" : "none";
+    overridesPanel.classList.toggle("is-hidden", e.target.value !== "custom");
   });
 
   const removeButton = wrapper.querySelector(".remove-rule");
@@ -322,6 +388,12 @@ function readTimeRulesFromDom() {
 function fillForm(settings) {
   const source = settings || UI_DEFAULTS;
   currentSettings = { ...structuredClone(UI_DEFAULTS), ...source };
+
+  uiThemeInput.value = currentSettings.uiTheme || "auto";
+  uiFontInput.value = currentSettings.uiFont || "system";
+  uiRadiusInput.value = currentSettings.uiRadius || "soft";
+  setSelectedAccent(currentSettings.uiAccent);
+  previewAppearance();
 
   setSelectedMode(currentSettings.mode);
   actionBlockVideoInput.checked = currentSettings.actionBlockVideo !== false;
@@ -451,6 +523,10 @@ function buildPayload() {
   }
 
   const payload = {
+    uiTheme: uiThemeInput.value,
+    uiFont: uiFontInput.value,
+    uiRadius: uiRadiusInput.value,
+    uiAccent: getSelectedAccent(),
     mode, actionBlockVideo, actionHideCover,
     autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
     blockBannerEnabled: blockBannerEnabledInput.checked,

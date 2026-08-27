@@ -1,0 +1,99 @@
+/*
+ * 设计令牌唯一来源。popup / options / welcome 三个扩展页和拦截弹窗都从这里取值。
+ *
+ * 颜色用 light-dark() 只写一份，跟随系统零 JS、零主题闪烁（CSS 先于 JS 生效）。
+ * 手动覆盖只需改 color-scheme，不用复制整套暗色令牌。
+ * 代价是需要 Chrome/Edge 123+，manifest 里已声明 minimum_chrome_version。
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* ── 表面与文字 ── */
+  --bg:            light-dark(#f6f7f9, #0f1115);
+  --surface:       light-dark(#ffffff, #171a20);
+  --surface-2:     light-dark(#f0f2f5, #1e222a);
+  --surface-hover: light-dark(#e9ecf1, #242933);
+  --border:        light-dark(#e3e6ea, #272c35);
+  --border-strong: light-dark(#cfd4da, #363c47);
+  --text:          light-dark(#1a1d21, #e6e9ee);
+  --text-sub:      light-dark(#5b6570, #9aa4b2);
+  --text-muted:    light-dark(#8b949e, #6b7482);
+
+  /* ── 语义色 ── */
+  --success:    light-dark(#16a34a, #4ade80);
+  --warn:       light-dark(#b45309, #fbbf24);
+  --warn-bg:    light-dark(#fef6e7, #2a2115);
+  --warn-border:light-dark(#f5d9a8, #4a3a1c);
+  --danger:     light-dark(#dc2626, #f87171);
+  --danger-bg:  light-dark(#fef2f2, #2a1618);
+
+  /* ── 强调色 ──
+   * 预设由 html[data-accent] 切换，每个都给亮/暗两版以保证 4.5:1 对比度。
+   * 自定义色由 ui/theme.js 直接 setProperty 覆盖 --accent / --accent-contrast。
+   * 所有预设都遵循「亮色模式用深色、暗色模式用浅色」，所以前景色可以统一。 */
+  --accent:          light-dark(#d13438, #ff6b6e);
+  --accent-contrast: light-dark(#ffffff, #16181d);
+
+  /* 派生色一律用 color-mix 从 --accent 现算，不单独存储，换色只改一个变量 */
+  --accent-hover: color-mix(in oklab, var(--accent) 85%, black);
+  --accent-soft:  color-mix(in oklab, var(--accent) 14%, var(--surface));
+  --accent-line:  color-mix(in oklab, var(--accent) 40%, var(--border));
+  --accent-ring:  color-mix(in oklab, var(--accent) 45%, transparent);
+
+  /* ── 间距尺度 ── */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s7: 32px;
+
+  /* ── 圆角（三档由 html[data-radius] 覆盖，默认 soft） ── */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+  --r-pill: 999px;
+
+  /* ── 字体（三档由 html[data-font] 覆盖，默认 system）──
+   * 中文优先。mono 也必须带中文兜底，否则中文回落到系统默认字体会导致行高跳动。 */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+                 "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
+                 "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+  --font-serif:  "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", SimSun, Georgia, serif;
+  --font-mono:   ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas,
+                 "Microsoft YaHei", monospace;
+  --font-ui: var(--font-system);
+
+  /* ── 阴影与动效 ── */
+  --shadow-1: 0 1px 2px light-dark(rgba(16, 24, 40, .06), rgba(0, 0, 0, .4));
+  --shadow-2: 0 1px 2px light-dark(rgba(16, 24, 40, .06), rgba(0, 0, 0, .4)),
+              0 8px 24px light-dark(rgba(16, 24, 40, .08), rgba(0, 0, 0, .5));
+  --dur-fast: 120ms;
+  --dur: 200ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* 手动覆盖：只改 color-scheme，light-dark() 会自动切换所有令牌 */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"]  { color-scheme: dark; }
+
+/* ── 强调色预设 ── */
+html[data-accent="crimson"] { --accent: light-dark(#d13438, #ff6b6e); }
+html[data-accent="indigo"]  { --accent: light-dark(#4f46e5, #818cf8); }
+html[data-accent="teal"]    { --accent: light-dark(#0d9488, #2dd4bf); }
+html[data-accent="amber"]   { --accent: light-dark(#b45309, #fbbf24); }
+html[data-accent="rose"]    { --accent: light-dark(#be185d, #f472b6); }
+html[data-accent="slate"]   { --accent: light-dark(#475569, #94a3b8); }
+
+/* ── 圆角档位 ── */
+html[data-radius="sharp"] { --r-sm: 2px;  --r-md: 4px;  --r-lg: 6px; }
+html[data-radius="soft"]  { --r-sm: 6px;  --r-md: 10px; --r-lg: 14px; }
+html[data-radius="round"] { --r-sm: 10px; --r-md: 16px; --r-lg: 22px; }
+
+/* ── 字体档位 ── */
+html[data-font="system"] { --font-ui: var(--font-system); }
+html[data-font="serif"]  { --font-ui: var(--font-serif); }
+html[data-font="mono"]   { --font-ui: var(--font-mono); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
