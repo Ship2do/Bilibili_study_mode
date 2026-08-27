@@ -22,3 +22,8 @@ npm-debug.log
 *.pem
 *.zip
 dist/
+
+# 本地开发脚本（不属于扩展本体）
+scripts/
+
+.gitignore

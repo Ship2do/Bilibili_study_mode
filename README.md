@@ -5,7 +5,7 @@
 ## 目录结构
 
 ```
-shared/                      # 共享模块（background + content 共用）
+shared/                      # 共享模块（仅 background 使用）
   constants.js               # 默认设置、关键词、Prompt 模板
   utils.js                   # 工具函数（关键词匹配、模式规范化等）
 
