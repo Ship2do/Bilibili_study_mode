@@ -1,13 +1,19 @@
 # B站学习模式守护（Edge 扩展）[![Edge 商店](https://img.shields.io/badge/Edge-扩展商店-blue.svg)](https://microsoftedge.microsoft.com/addons/detail/jachmidhanilfknhankklemigokhpbkm)
 
-用于学习场景的反分心扩展，支持互斥判定模式、统一动作策略、AI自定义Prompt、时段策略、密码保护、直播拦截。
+用于学习场景的反分心扩展，支持互斥判定模式、统一动作策略、AI自定义Prompt、时段策略、密码保护、直播拦截、亮/暗主题与拦截界面自定义。
 
 ## 目录结构
 
 ```
-shared/                      # 共享模块（仅 background 使用）
-  constants.js               # 默认设置、关键词、Prompt 模板
+shared/                      # 共享模块（background 与设置页共用）
+  constants.js               # 默认设置、UI 设置 schema、关键词、Prompt 模板
   utils.js                   # 工具函数（关键词匹配、模式规范化等）
+
+ui/                          # 三个扩展页共用的样式层
+  tokens.css                 # 设计令牌唯一来源（亮/暗、尺度、字体、圆角）
+  base.css                   # 令牌驱动的通用组件
+  options.css / popup.css / welcome.css
+  theme.js                   # applyTheme()：主题、强调色、字体、圆角
 
 background/                  # 后台服务模块
   background.js              # 入口：生命周期监听、缓存清理
@@ -23,15 +29,17 @@ background/                  # 后台服务模块
 
 content/                     # 内容脚本模块
   content.js                 # 入口：导航监听、状态管理、初始化
-  overlay.js                 # 拦截弹窗 UI
-  page-blocker.js            # 页面拦截（滚动锁定、视频暂停）
+  overlay-theme.js           # 拦截界面的调色板与 CSS 模板
+  overlay.js                 # 拦截界面（Shadow DOM 隔离、主题令牌下发）
+  page-blocker.js            # 页面拦截（呈现方式、滚动锁定、视频暂停、出口控制）
   card-hider.js              # 封面隐藏（批量检查、卡片隐藏/恢复）
   video-groups.js            # 视频/直播链接收集、卡片容器识别
   live-parser.js             # 视频/直播 URL 解析
   auto-not-interested.js     # 自动标记"不感兴趣"
 
-popup.html + popup.js        # 弹窗快捷开关与模式切换
-options.html + options.js    # 详细设置页（含占位符按钮）
+popup.html + popup.js        # 弹窗快捷开关、模式与主题切换
+options.html + options.js    # 详细设置页
+welcome.html + welcome.js    # 首装引导（六步向导 + 实地试跑）
 ```
 
 ## 核心设计
@@ -62,10 +70,45 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 - `custom`：在时段内覆盖判定模式与动作
 - 优先级：`block_all > custom`，同级按规则顺序
 
+### 外观与拦截界面自定义
+
+- 主题：亮色 / 暗色 / 跟随系统，六种强调色预设，三档字体与圆角
+- 拦截界面：自定义标题与鼓励语、是否显示视频信息、横幅密度/速度/色相（带实时预览）
+- 三种拦截呈现方式：
+
+| 方式 | 效果 | 滚动锁 | 横幅 |
+|------|------|--------|------|
+| 全屏遮罩（默认） | 完全挡住页面 | 跟随设置 | 支持 |
+| 毛玻璃卡片 | 页面可见但拦住点击 | 跟随设置 | 否 |
+| 顶部提示条 | 不阻断观看 | 强制关闭 | 否 |
+
+拦截界面注入在 Shadow DOM 里，并对宿主的关键样式与全部可继承属性做了
+`!important` 加固——否则B站的全局规则（`div { ... !important }`、
+`* { letter-spacing: ... !important }`）会击穿遮罩底色和中文字距。
+
 ### 密码锁
 
-- 降低专注度的操作需要密码（切换弱模式、关闭动作、放宽策略等）
-- 提升专注度的操作不要求密码
+密码锁只管**拦截强度**，不管**样式**：
+
+- **样式（自由改）**：主题、强调色、字体、圆角、横幅文案与参数、鼓励语、是否显示视频信息
+- **强度（需要密码）**：呈现方式降级、「继续观看」出口、自动放行、取消滚动锁、取消视频暂停、遮罩调淡
+
+强度按 6 个独立维度逐一比较，任一维变弱即要求密码。刻意不合成加权总分——
+加权分可以被补偿攻击绕过（把遮罩调到看不清、同时把无关维度调严，总分持平就
+不用密码了）。连续值（不透明度、秒数）只分 2~3 档，档位名直接显示在滑块旁，
+让「调到哪里会要密码」对用户可预期。
+
+提升专注度的操作一律不要求密码。
+
+### 首次使用引导
+
+首次安装会自动打开六步引导：选判定模式 → 配关键词（六个学科预设包一键填充）
+→ 外观 → 密码锁 → 用刚配的规则实地试跑三个示例视频。
+
+引导里默认预选**弱模式**而非冷启动的强模式——新用户直接用白名单会几乎全站
+被拦，这是最大的首次体验陷阱。选强模式且关键词为 0 时「下一步」会被禁用。
+
+升级不会打扰老用户，只在图标上挂一个角标。
 
 ## AI Prompt 设置
 
@@ -110,3 +153,6 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 - `search.bilibili.com`（搜索结果）
 - `live.bilibili.com`（直播间）
 - AI 接口域名：按需授权，由设置页在保存时申请
+
+浏览器要求 **Chrome / Edge 123 以上**（样式令牌用了 CSS 的 `light-dark()`，
+它让亮暗主题只写一份、跟随系统时零 JS 零闪烁）。
