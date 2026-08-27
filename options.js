@@ -37,6 +37,24 @@ const autoNotInterestedEnabledInput = document.getElementById("autoNotInterested
 const blockBannerEnabledInput = document.getElementById("blockBannerEnabled");
 const blockBannerTextInput = document.getElementById("blockBannerText");
 const bannerPreview = document.getElementById("bannerPreview");
+const blockBannerDensityInput = document.getElementById("blockBannerDensity");
+const blockBannerSpeedInput = document.getElementById("blockBannerSpeed");
+const blockBannerHueInput = document.getElementById("blockBannerHue");
+const bannerDensityLabel = document.getElementById("bannerDensityLabel");
+const bannerSpeedLabel = document.getElementById("bannerSpeedLabel");
+const bannerHueLabel = document.getElementById("bannerHueLabel");
+const blockShowVideoInfoInput = document.getElementById("blockShowVideoInfo");
+const blockTitleTextInput = document.getElementById("blockTitleText");
+const blockEncourageTextInput = document.getElementById("blockEncourageText");
+
+const presentationInputs = Array.from(document.querySelectorAll("input[name='blockPresentation']"));
+const blockOpacityInput = document.getElementById("blockOpacity");
+const blockOpacityLabel = document.getElementById("blockOpacityLabel");
+const blockScrollLockInput = document.getElementById("blockScrollLock");
+const blockPauseVideoInput = document.getElementById("blockPauseVideo");
+const blockAllowContinueInput = document.getElementById("blockAllowContinue");
+const blockContinueDelaySecInput = document.getElementById("blockContinueDelaySec");
+const blockAutoDismissSecInput = document.getElementById("blockAutoDismissSec");
 
 const allowChipsWrap = document.getElementById("allowChips");
 const allowChipInput = document.getElementById("allowChipInput");
@@ -231,6 +249,100 @@ for (const input of [uiThemeInput, uiFontInput, uiRadiusInput]) {
   input.addEventListener("change", previewAppearance);
 }
 
+// ── 拦截界面外观：实时预览 ──
+// 用与拦截界面同一套 hue/speed/density 参数渲染几条缩小版横幅，
+// 让「密度」「速度」「色相」这三个抽象滑块可见即可得。
+function renderBannerPreview() {
+  if (!bannerPreview) return;
+  const text = blockBannerTextInput.value.trim() || "学习！";
+  const density = Number(blockBannerDensityInput.value);
+  const speed = Number(blockBannerSpeedInput.value);
+  const hue = Number(blockBannerHueInput.value);
+  const enabled = blockBannerEnabledInput.checked && density > 0;
+
+  bannerPreview.innerHTML = "";
+  if (!enabled) {
+    const empty = document.createElement("span");
+    empty.className = "hint";
+    empty.textContent = "横幅已关闭";
+    bannerPreview.appendChild(empty);
+    return;
+  }
+
+  // 预览区只有真实屏幕的一小块，按比例缩条数，保持观感一致
+  const rows = Math.max(1, Math.round(density / 4));
+  for (let i = 0; i < rows; i++) {
+    const shift = ((i * 37) % 11) - 5;
+    const row = document.createElement("div");
+    // 角度走自定义属性，让 keyframes 里的 transform 能把旋转和平移合起来，
+    // 否则动画的 transform 会整个覆盖掉内联的 rotate
+    row.style.cssText = `
+      --preview-angle: ${((i * 53) % 40) - 20}deg;
+      position: absolute; left: -60%; width: 220%; height: 20px; line-height: 20px;
+      top: ${(i / rows) * 120 - 10}%;
+      background: hsl(${(hue + shift + 360) % 360} 70% 46%);
+      color: #fff; font-size: 12px; font-weight: 700; text-align: center; white-space: nowrap;
+      animation: sg-preview-scroll ${16 - speed}s linear infinite ${i % 2 ? "reverse" : "normal"};
+    `;
+    row.textContent = Array(20).fill(text).join("　　");
+    bannerPreview.appendChild(row);
+  }
+}
+
+function describeDensity(value) {
+  if (value === 0) return "关闭";
+  if (value <= 8) return `${value} · 稀疏`;
+  if (value <= 22) return `${value} · 适中`;
+  return `${value} · 密集`;
+}
+
+function describeSpeed(value) {
+  if (value <= 3) return `${value} · 缓慢`;
+  if (value <= 7) return `${value} · 适中`;
+  return `${value} · 快速`;
+}
+
+// 档位名要和 background/settings.js 里 opacityTier 的分档一致，
+// 用户才能预期「调到哪里会要密码」。
+function describeOpacity(value) {
+  if (value >= 90) return `${value}% · 不透明`;
+  if (value >= 75) return `${value}% · 半透明`;
+  return `${value}% · 淡`;
+}
+
+function refreshBlockAppearance() {
+  bannerDensityLabel.textContent = describeDensity(Number(blockBannerDensityInput.value));
+  bannerSpeedLabel.textContent = describeSpeed(Number(blockBannerSpeedInput.value));
+  bannerHueLabel.textContent = `${blockBannerHueInput.value}°`;
+  renderBannerPreview();
+}
+
+function refreshBlockStrength() {
+  blockOpacityLabel.textContent = describeOpacity(Number(blockOpacityInput.value));
+  // 提示条模式下这几项由呈现方式强制决定，置灰避免误导
+  const kind = getSelectedPresentation();
+  const isToast = kind === "toast";
+  blockScrollLockInput.disabled = isToast;
+  blockAllowContinueInput.disabled = isToast;
+  blockContinueDelaySecInput.disabled = isToast;
+  blockOpacityInput.disabled = isToast;
+}
+
+function getSelectedPresentation() {
+  const checked = presentationInputs.find(input => input.checked);
+  return checked ? checked.value : "overlay";
+}
+
+for (const input of [blockBannerEnabledInput, blockBannerTextInput, blockBannerDensityInput,
+  blockBannerSpeedInput, blockBannerHueInput]) {
+  input.addEventListener("input", refreshBlockAppearance);
+  input.addEventListener("change", refreshBlockAppearance);
+}
+for (const input of [...presentationInputs, blockOpacityInput]) {
+  input.addEventListener("input", refreshBlockStrength);
+  input.addEventListener("change", refreshBlockStrength);
+}
+
 // ── Time rules ──
 
 function createEmptyRule() {
@@ -402,7 +514,25 @@ function fillForm(settings) {
 
   blockBannerEnabledInput.checked = currentSettings.blockBannerEnabled !== false;
   blockBannerTextInput.value = String(currentSettings.blockBannerText || "学习！");
-  if (bannerPreview) bannerPreview.textContent = blockBannerTextInput.value || "学习！";
+  blockBannerDensityInput.value = String(currentSettings.blockBannerDensity ?? 18);
+  blockBannerSpeedInput.value = String(currentSettings.blockBannerSpeed ?? 5);
+  blockBannerHueInput.value = String(currentSettings.blockBannerHue ?? 355);
+  blockShowVideoInfoInput.checked = currentSettings.blockShowVideoInfo !== false;
+  blockTitleTextInput.value = String(currentSettings.blockTitleText || "");
+  blockEncourageTextInput.value = String(currentSettings.blockEncourageText || "");
+
+  const presentation = ["overlay", "card", "toast"].includes(currentSettings.blockPresentation)
+    ? currentSettings.blockPresentation : "overlay";
+  for (const input of presentationInputs) input.checked = input.value === presentation;
+  blockOpacityInput.value = String(currentSettings.blockOpacity ?? 97);
+  blockScrollLockInput.checked = currentSettings.blockScrollLock !== false;
+  blockPauseVideoInput.checked = currentSettings.blockPauseVideo !== false;
+  blockAllowContinueInput.checked = currentSettings.blockAllowContinue === true;
+  blockContinueDelaySecInput.value = String(currentSettings.blockContinueDelaySec ?? 10);
+  blockAutoDismissSecInput.value = String(currentSettings.blockAutoDismissSec ?? 0);
+
+  refreshBlockAppearance();
+  refreshBlockStrength();
 
   renderChips(allowChipsWrap, allowChipInput, currentSettings.allowKeywords || []);
   renderChips(blockChipsWrap, blockChipInput, currentSettings.blockKeywords || []);
@@ -531,6 +661,19 @@ function buildPayload() {
     autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
     blockBannerEnabled: blockBannerEnabledInput.checked,
     blockBannerText: String(blockBannerTextInput.value || "").trim() || "学习！",
+    blockBannerDensity: clampNumber(blockBannerDensityInput.value, 0, 36, 18),
+    blockBannerSpeed: clampNumber(blockBannerSpeedInput.value, 1, 10, 5),
+    blockBannerHue: clampNumber(blockBannerHueInput.value, 0, 359, 355),
+    blockShowVideoInfo: blockShowVideoInfoInput.checked,
+    blockTitleText: String(blockTitleTextInput.value || "").trim(),
+    blockEncourageText: String(blockEncourageTextInput.value || "").trim(),
+    blockPresentation: getSelectedPresentation(),
+    blockOpacity: clampNumber(blockOpacityInput.value, 60, 100, 97),
+    blockScrollLock: blockScrollLockInput.checked,
+    blockPauseVideo: blockPauseVideoInput.checked,
+    blockAllowContinue: blockAllowContinueInput.checked,
+    blockContinueDelaySec: clampNumber(blockContinueDelaySecInput.value, 0, 60, 10),
+    blockAutoDismissSec: clampNumber(blockAutoDismissSecInput.value, 0, 600, 0),
     allowKeywords, blockKeywords,
     aiPreFilterBlockKeywords: aiPreFilterBlockKeywordsInput.checked,
     aiApiUrl, aiModel, aiApiKey, aiPrompt,

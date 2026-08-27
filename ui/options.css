@@ -136,7 +136,13 @@
   overflow: hidden;
   background: #0d0f13;
 }
+.preview-frame > .hint { position: absolute; inset: 0; display: grid; place-items: center; }
 .preview-note { margin-top: var(--s2); }
+
+@keyframes sg-preview-scroll {
+  from { transform: translateX(-12%) rotate(var(--preview-angle, 0deg)); }
+  to   { transform: translateX(12%) rotate(var(--preview-angle, 0deg)); }
+}
 
 /* 呈现方式选择：三张小卡 */
 .presentation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }

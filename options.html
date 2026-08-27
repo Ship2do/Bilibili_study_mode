@@ -113,20 +113,150 @@
           <p class="hint">外观设置属于纯样式，即使开启了专注密码锁也可以随时修改。</p>
         </div>
 
-        <!-- 拦截界面横幅 -->
+        <!-- 拦截界面外观 -->
         <div class="section">
-          <h2 class="section-title">拦截界面横幅</h2>
+          <h2 class="section-title">拦截界面外观</h2>
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="blockTitleText">标题文案</label>
+              <input id="blockTitleText" type="text" placeholder="已拦截" maxlength="20" />
+            </div>
+            <div class="item">
+              <label class="label" for="blockEncourageText">
+                鼓励语
+                <span class="tip">ⓘ<span class="tip-text">留空则从内置文案里按视频稳定挑一条</span></span>
+              </label>
+              <input id="blockEncourageText" type="text" placeholder="留空自动挑选" maxlength="40" />
+            </div>
+          </div>
+          <div class="item">
+            <label class="row">
+              <input id="blockShowVideoInfo" type="checkbox" />
+              <span>显示被拦视频的标题与分区</span>
+            </label>
+          </div>
+
           <div class="item">
             <label class="row">
               <input id="blockBannerEnabled" type="checkbox" />
-              <span>显示红色警示横幅</span>
+              <span>
+                显示警示横幅
+                <span class="tip">ⓘ<span class="tip-text">仅全屏遮罩模式会显示横幅</span></span>
+              </span>
             </label>
           </div>
           <div class="item">
             <label class="label" for="blockBannerText">横幅字样</label>
             <input id="blockBannerText" type="text" placeholder="学习！" maxlength="20" />
-            <div class="banner-preview" id="bannerPreview">学习！</div>
           </div>
+          <div class="grid3">
+            <div class="item">
+              <label class="label" for="blockBannerDensity">横幅密度</label>
+              <div class="slider-row">
+                <input id="blockBannerDensity" type="range" min="0" max="36" step="1" />
+                <span class="tier-label" id="bannerDensityLabel"></span>
+              </div>
+            </div>
+            <div class="item">
+              <label class="label" for="blockBannerSpeed">滚动速度</label>
+              <div class="slider-row">
+                <input id="blockBannerSpeed" type="range" min="1" max="10" step="1" />
+                <span class="tier-label" id="bannerSpeedLabel"></span>
+              </div>
+            </div>
+            <div class="item">
+              <label class="label" for="blockBannerHue">横幅色相</label>
+              <div class="slider-row">
+                <input id="blockBannerHue" type="range" min="0" max="359" step="1" />
+                <span class="tier-label" id="bannerHueLabel"></span>
+              </div>
+            </div>
+          </div>
+          <div class="item">
+            <label class="label">实时预览</label>
+            <div class="preview-frame" id="bannerPreview"></div>
+            <p class="hint preview-note">预览用的密度已按比例缩小，实际拦截界面会铺满整屏。</p>
+          </div>
+          <p class="hint">以上都属于纯样式，开启专注密码锁后依然可以随时修改。</p>
+        </div>
+
+        <!-- 拦截强度 -->
+        <div class="section">
+          <h2 class="section-title">
+            拦截强度
+            <span class="locked-badge">🔒 受密码锁保护</span>
+          </h2>
+          <div class="item">
+            <label class="label">呈现方式</label>
+            <div class="presentation-grid">
+              <label class="presentation-card" data-kind="overlay">
+                <span class="presentation-figure"></span>
+                <span class="row">
+                  <input type="radio" name="blockPresentation" value="overlay" />
+                  <span class="mode-title">全屏遮罩</span>
+                </span>
+                <span class="mode-note">最强，完全挡住页面</span>
+              </label>
+              <label class="presentation-card" data-kind="card">
+                <span class="presentation-figure"></span>
+                <span class="row">
+                  <input type="radio" name="blockPresentation" value="card" />
+                  <span class="mode-title">毛玻璃卡片</span>
+                </span>
+                <span class="mode-note">页面可见但拦住点击</span>
+              </label>
+              <label class="presentation-card" data-kind="toast">
+                <span class="presentation-figure"></span>
+                <span class="row">
+                  <input type="radio" name="blockPresentation" value="toast" />
+                  <span class="mode-title">顶部提示条</span>
+                </span>
+                <span class="mode-note">最弱，不阻断观看</span>
+              </label>
+            </div>
+          </div>
+          <div class="item">
+            <label class="label" for="blockOpacity">遮罩不透明度</label>
+            <div class="slider-row">
+              <input id="blockOpacity" type="range" min="60" max="100" step="1" />
+              <span class="tier-label" id="blockOpacityLabel"></span>
+            </div>
+          </div>
+          <div class="item">
+            <label class="row">
+              <input id="blockScrollLock" type="checkbox" />
+              <span>拦截时锁定页面滚动</span>
+            </label>
+          </div>
+          <div class="item">
+            <label class="row">
+              <input id="blockPauseVideo" type="checkbox" />
+              <span>拦截时持续暂停视频</span>
+            </label>
+          </div>
+          <div class="item">
+            <label class="row">
+              <input id="blockAllowContinue" type="checkbox" />
+              <span>
+                提供「继续观看」出口
+                <span class="tip">ⓘ<span class="tip-text">顶部提示条模式下始终提供该出口</span></span>
+              </span>
+            </label>
+          </div>
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="blockContinueDelaySec">继续观看前等待（秒）</label>
+              <input id="blockContinueDelaySec" type="number" min="0" max="60" step="1" />
+            </div>
+            <div class="item">
+              <label class="label" for="blockAutoDismissSec">
+                自动放行（秒）
+                <span class="tip">ⓘ<span class="tip-text">0 表示不自动放行</span></span>
+              </label>
+              <input id="blockAutoDismissSec" type="number" min="0" max="600" step="10" />
+            </div>
+          </div>
+          <p class="warn">这些设置会削弱拦截力度。开启专注密码锁后，调低任何一项都需要输入密码；调高不需要。</p>
         </div>
 
         <!-- 关键词库 -->
