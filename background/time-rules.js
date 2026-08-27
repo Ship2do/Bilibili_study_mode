@@ -89,18 +89,17 @@ function getActiveTimeRule(settings, nowDate) {
   const now = nowDate instanceof Date ? nowDate : new Date();
   const weights = { block_all: 99, custom: 1 };
   let selected = null;
-  let selectedIdx = -1;
   let selectedWeight = -1;
 
-  rules.forEach((rule, idx) => {
-    if (!isRuleActiveAt(rule, now)) return;
+  // 遍历本身就是按规则顺序的，所以「权重更高才替换」即等价于「同权重取第一条」。
+  for (const rule of rules) {
+    if (!isRuleActiveAt(rule, now)) continue;
     const w = weights[rule.mode] || 1;
-    if (w > selectedWeight || (w === selectedWeight && selectedIdx >= 0 && idx < selectedIdx)) {
+    if (w > selectedWeight) {
       selected = rule;
-      selectedIdx = idx;
       selectedWeight = w;
     }
-  });
+  }
   return selected;
 }
 

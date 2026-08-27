@@ -1,3 +1,14 @@
+// 单页应用会长时间不刷新，决策缓存需要封顶，否则随浏览无限增长。
+const DECISION_CACHE_LIMIT = 500;
+
+function rememberDecision(state, videoKey, decision) {
+  if (state.decisionCache.size >= DECISION_CACHE_LIMIT && !state.decisionCache.has(videoKey)) {
+    const oldest = state.decisionCache.keys().next().value;
+    if (oldest !== undefined) state.decisionCache.delete(oldest);
+  }
+  state.decisionCache.set(videoKey, decision);
+}
+
 function hideGroup(group, decision, state) {
   let firstContainer = null;
   for (const link of group.links) {
@@ -13,7 +24,7 @@ function hideGroup(group, decision, state) {
     }
   }
   scheduleNotInterestedAttempt(group.videoId.key, firstContainer || document, state);
-  state.decisionCache.set(group.videoId.key, decision);
+  rememberDecision(state, group.videoId.key, decision);
 }
 
 function shouldHideCard(decision) {
@@ -86,17 +97,17 @@ async function filterVideoCards(state) {
       for (const group of chunk) {
         const decision = normalizeDecision(batchResults[group.videoId.key] || emptyDecision());
         if (shouldHideCard(decision)) hideGroup(group, decision, state);
-        else state.decisionCache.set(group.videoId.key, decision);
+        else rememberDecision(state, group.videoId.key, decision);
       }
     }
 
     for (const group of liveGroups) {
       const decision = await checkSingleVideo(group.videoId, "card");
       if (shouldHideCard(decision)) hideGroup(group, decision, state);
-      else state.decisionCache.set(group.videoId.key, decision);
+      else rememberDecision(state, group.videoId.key, decision);
     }
   } finally {
     state.cardScanRunning = false;
-    if (state.cardScanQueued) { state.cardScanQueued = false; scheduleCardScan(120, state); }
+    if (state.cardScanQueued) { state.cardScanQueued = false; scheduleCardScan(120); }
   }
 }
