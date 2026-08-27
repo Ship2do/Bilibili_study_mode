@@ -11,8 +11,10 @@
     "https://search.bilibili.com/*",
     "https://live.bilibili.com/*",
     "https://api.bilibili.com/*",
-    "https://api.live.bilibili.com/*",
-    "<all_urls>"
+    "https://api.live.bilibili.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
   ],
   "background": {
     "service_worker": "background/background.js"

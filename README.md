@@ -85,6 +85,12 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 | `https://api.openai.com` | `https://api.openai.com/v1/chat/completions` |
 | 已含完整路径 | 原样使用 |
 
+### 接口域名授权
+
+扩展只固定申请 B站相关域名。AI 接口域名由你自己填写，因此改为**按需授权**：在设置页保存时，浏览器会请求访问该域名的权限，API URL 下方会显示当前授权状态。
+
+> 从 2.1.0 之前的版本升级：AI 模式需要在设置页**重新保存一次**以完成授权，否则 AI 判定会失败（此时会按安全策略拦截）。
+
 ## 安装
 
 ### Edge 浏览器（推荐）
@@ -103,3 +109,4 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 - `www.bilibili.com`（视频页与推荐流）
 - `search.bilibili.com`（搜索结果）
 - `live.bilibili.com`（直播间）
+- AI 接口域名：按需授权，由设置页在保存时申请

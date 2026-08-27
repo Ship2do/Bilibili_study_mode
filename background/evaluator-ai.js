@@ -161,7 +161,12 @@ async function callAiJudge(metadata, settings) {
     if (!response.ok) throw new Error(`AI接口状态异常: HTTP ${response.status}`);
     return parseAiDecisionText(extractTextFromAiResponse(await response.json()));
   } catch (error) {
-    throw new Error(error.name === "AbortError" ? "AI请求超时" : error.message);
+    if (error.name === "AbortError") throw new Error("AI请求超时");
+    // 域名未授权时 fetch 抛的是 TypeError，原始信息（Failed to fetch）看不出原因。
+    if (error instanceof TypeError) {
+      throw new Error(`无法访问AI接口，可能尚未授权该域名，请打开设置页重新保存以授权（${error.message}）`);
+    }
+    throw new Error(error.message);
   } finally {
     clearTimeout(timeoutId);
   }

@@ -72,6 +72,7 @@ const aiModelInput = document.getElementById("aiModel");
 const aiApiKeyInput = document.getElementById("aiApiKey");
 const aiRequestTimeoutMsInput = document.getElementById("aiRequestTimeoutMs");
 const aiPromptInput = document.getElementById("aiPrompt");
+const aiPermissionHint = document.getElementById("aiPermissionHint");
 
 const timeStrategyEnabledInput = document.getElementById("timeStrategyEnabled");
 const addTimeRuleButton = document.getElementById("addTimeRule");
@@ -371,6 +372,8 @@ function fillForm(settings) {
   newPasswordInput.value = "";
   confirmPasswordInput.value = "";
   unlockPasswordInput.value = "";
+
+  refreshAiPermissionHint();
 }
 
 async function loadSettings() {
@@ -388,6 +391,53 @@ function modeLabel(mode) {
   if (mode === "ai") return "AI模式";
   return "强模式";
 }
+
+// ── AI 接口域名授权 ──
+// 扩展不再申请 <all_urls>，AI 接口所在域名改为保存时按需申请。
+
+function aiOriginPattern(rawUrl) {
+  try {
+    const parsed = new URL(String(rawUrl || "").trim());
+    return parsed.protocol === "https:" ? `${parsed.origin}/*` : "";
+  } catch (_e) {
+    return "";
+  }
+}
+
+// 必须在任何 await 之前同步调用 chrome.permissions.request，否则用户手势丢失、授权弹窗不会出现。
+function requestAiHostPermission(rawUrl) {
+  const pattern = aiOriginPattern(rawUrl);
+  if (!pattern || !chrome.permissions) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    chrome.permissions.request({ origins: [pattern] }, (granted) => {
+      resolve(chrome.runtime.lastError ? false : granted === true);
+    });
+  });
+}
+
+async function refreshAiPermissionHint() {
+  if (!aiPermissionHint) return;
+  const raw = aiApiUrlInput.value.trim();
+  if (!raw) { aiPermissionHint.textContent = ""; return; }
+
+  const pattern = aiOriginPattern(raw);
+  if (!pattern) {
+    aiPermissionHint.textContent = "AI 接口需要填写完整的 https 地址";
+    return;
+  }
+  if (!chrome.permissions) { aiPermissionHint.textContent = ""; return; }
+
+  const granted = await new Promise((resolve) => {
+    chrome.permissions.contains({ origins: [pattern] }, (has) => {
+      resolve(chrome.runtime.lastError ? false : has === true);
+    });
+  });
+  aiPermissionHint.textContent = granted
+    ? `已授权访问 ${pattern}`
+    : `尚未授权访问 ${pattern}，保存时会请求授权`;
+}
+
+aiApiUrlInput.addEventListener("input", () => { refreshAiPermissionHint(); });
 
 function buildPayload() {
   const mode = getSelectedMode();
@@ -454,9 +504,22 @@ function buildPayload() {
   return { payload, auth, mode, allowCount: allowKeywords.length, blockCount: blockKeywords.length };
 }
 
+function aiModeInUse(payload) {
+  if (payload.mode === "ai") return true;
+  return payload.timeRules.some(rule => rule.mode === "custom" && rule.overrides.decisionMode === "ai");
+}
+
 async function saveSettings() {
   const built = buildPayload();
   if (built.error) { showStatus(built.error); return; }
+
+  let permissionWarning = "";
+  if (built.payload.aiApiUrl) {
+    const granted = await requestAiHostPermission(built.payload.aiApiUrl);
+    if (!granted && aiModeInUse(built.payload)) {
+      permissionWarning = "（未授权访问该 AI 接口域名，AI 判定会失败）";
+    }
+  }
 
   let response = await sendMessage({ type: "SET_SETTINGS", settings: built.payload, auth: built.auth });
 
@@ -470,7 +533,7 @@ async function saveSettings() {
 
   fillForm(response.settings);
   unlockPasswordInput.value = "";
-  showStatus(`保存成功：${modeLabel(built.mode)}，学习词 ${built.allowCount} 个，屏蔽词 ${built.blockCount} 个`);
+  showStatus(`保存成功：${modeLabel(built.mode)}，学习词 ${built.allowCount} 个，屏蔽词 ${built.blockCount} 个${permissionWarning}`);
 }
 
 async function resetSettings() {
