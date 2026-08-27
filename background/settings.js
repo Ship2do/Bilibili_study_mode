@@ -129,6 +129,51 @@ function hasNewKeywords(base, next) {
   return (Array.isArray(next) ? next : []).some(n => !set.has(String(n)));
 }
 
+// ── 拦截强度的各个维度 ──
+//
+// 连续值（不透明度、秒数）刻意只分 2~3 档，不做逐点比较：97 调到 96 就索要
+// 密码会把设置页变成刑具；完全不比较又等于给密码锁留后门。档位名会显示在
+// 设置页的滑块旁，让规则对用户可见、可预期。
+//
+// 关键：isLessStrict 逐维度比较，不合成加权总分。加权分可以被「补偿攻击」
+// 绕过——把遮罩调到看不清、同时把另一个无关维度调严，总分持平就不要密码了。
+// 这与 timeRulesStrictnessScore 用加总不同是有意为之：时段规则是同量纲的
+// 时长×权重，可以相加；呈现强度是异质维度，不可相加。
+function presentationTier(settings) {
+  if (settings.blockPresentation === "toast") return 1;
+  if (settings.blockPresentation === "card") return 2;
+  return 3;
+}
+
+function continueTier(settings) {
+  if (settings.blockAllowContinue !== true) return 3;
+  return Number(settings.blockContinueDelaySec) >= 30 ? 2 : 1;
+}
+
+function autoDismissTier(settings) {
+  const seconds = Number(settings.blockAutoDismissSec);
+  if (!Number.isFinite(seconds) || seconds <= 0) return 3;
+  return seconds >= 120 ? 2 : 1;
+}
+
+function scrollLockTier(settings) {
+  return settings.blockScrollLock === false ? 0 : 1;
+}
+
+function pauseVideoTier(settings) {
+  return settings.blockPauseVideo === false ? 0 : 1;
+}
+
+function opacityTier(settings) {
+  const opacity = Number(settings.blockOpacity);
+  if (!Number.isFinite(opacity) || opacity >= 90) return 3;
+  return opacity >= 75 ? 2 : 1;
+}
+
+const STRICTNESS_DIMENSIONS = [
+  presentationTier, continueTier, autoDismissTier, scrollLockTier, pauseVideoTier, opacityTier
+];
+
 function isLessStrict(current, next) {
   if (current.actionBlockVideo && !next.actionBlockVideo) return true;
   if (current.actionHideCover && !next.actionHideCover) return true;
@@ -147,6 +192,9 @@ function isLessStrict(current, next) {
   if (current.timeStrategyEnabled && !next.timeStrategyEnabled) return true;
   if (timeRulesStrictnessScore(next) < timeRulesStrictnessScore(current)) return true;
   if (current.focusLockEnabled && !next.focusLockEnabled) return true;
+
+  // 任一强度维度变弱就要密码。样式类字段不出现在这里，因此天然免密码。
+  if (STRICTNESS_DIMENSIONS.some(dimension => dimension(next) < dimension(current))) return true;
   return false;
 }
 
