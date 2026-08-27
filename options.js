@@ -555,10 +555,13 @@ function fillForm(settings) {
 
   refreshBlockAppearance();
   refreshBlockStrength();
-  refreshModeAlert();
 
   renderChips(allowChipsWrap, allowChipInput, currentSettings.allowKeywords || []);
   renderChips(blockChipsWrap, blockChipInput, currentSettings.blockKeywords || []);
+
+  // 必须放在 renderChips 之后：这条提示要数 chip 的个数，先跑会永远读到 0，
+  // 强模式下每次打开设置页都会误报「没有学习关键词」。
+  refreshModeAlert();
 
   aiPreFilterBlockKeywordsInput.checked = currentSettings.aiPreFilterBlockKeywords !== false;
   aiApiUrlInput.value = String(currentSettings.aiApiUrl || "");

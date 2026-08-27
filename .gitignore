@@ -26,4 +26,7 @@ dist/
 # 本地开发脚本（不属于扩展本体）
 scripts/
 
+# 商店上传素材（由 scripts/store-shots.js 生成；对外展示的那几张已放进 preview/）
+store/
+
 .gitignore
