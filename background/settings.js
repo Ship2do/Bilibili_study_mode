@@ -42,6 +42,14 @@ function normalizeSettings(raw) {
     focusLockEnabled: src.focusLockEnabled === true,
     focusLockPasswordHash: String(src.focusLockPasswordHash || "").trim()
   };
+
+  // 外观与拦截呈现字段统一由 schema 归一化，加字段只改 shared/constants.js。
+  // 上面那些老字段的兜底含历史迁移分支（enabled / hideBlockedCovers / aiEnabled），
+  // 保持手写，不要并进来。
+  for (const [key, spec] of Object.entries(UI_SETTINGS_SCHEMA)) {
+    base[key] = normalizeBySchema(src[key], spec);
+  }
+
   base.timeRules = normalizeTimeRules(src.timeRules, base);
   return ensureAtLeastOneAction(base);
 }
