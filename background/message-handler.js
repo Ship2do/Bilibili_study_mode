@@ -1,4 +1,7 @@
 const CHECK_CACHE_TTL_MS = 30 * 60 * 1000;
+// 失败（断网、B站限流）只做极短的负缓存：既不至于每次扫描都重打接口，
+// 也不会让一次网络抖动把视频误拦满 30 分钟。
+const FAILED_CACHE_TTL_MS = 30 * 1000;
 const checkCache = new Map();
 const inFlightChecks = new Map();
 
@@ -27,15 +30,20 @@ function settingsFingerprint(settings, context) {
 function getCachedDecision(cacheKey, fingerprint) {
   const cached = checkCache.get(cacheKey);
   if (!cached) return null;
-  if (Date.now() - cached.timestamp > CHECK_CACHE_TTL_MS || cached.fingerprint !== fingerprint) {
+  if (Date.now() - cached.timestamp > cached.ttlMs || cached.fingerprint !== fingerprint) {
     checkCache.delete(cacheKey);
     return null;
   }
   return cached.result;
 }
 
-function setCachedDecision(cacheKey, fingerprint, result) {
-  checkCache.set(cacheKey, { fingerprint, timestamp: Date.now(), result });
+function setCachedDecision(cacheKey, fingerprint, result, ttlMs) {
+  checkCache.set(cacheKey, {
+    fingerprint,
+    timestamp: Date.now(),
+    ttlMs: Number.isFinite(ttlMs) ? ttlMs : CHECK_CACHE_TTL_MS,
+    result
+  });
 }
 
 function enrichDecision(decision, metadata) {
@@ -139,7 +147,7 @@ async function checkVideoWithSettings(videoId, settings, context) {
       return enriched;
     } catch (error) {
       const failed = failedDecision(`视频校验失败：${error.message}`);
-      setCachedDecision(cacheKey, fingerprint, failed);
+      setCachedDecision(cacheKey, fingerprint, failed, FAILED_CACHE_TTL_MS);
       return failed;
     }
   })().finally(() => { inFlightChecks.delete(inFlightKey); });
