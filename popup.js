@@ -7,6 +7,9 @@ const themeInputs = Array.from(document.querySelectorAll("input[name='uiTheme']"
 
 let currentSettings = null;
 
+// 升级后 background 会挂个 NEW 角标提示有更新，用户打开面板就算看到了
+if (chrome.action && chrome.action.setBadgeText) chrome.action.setBadgeText({ text: "" });
+
 function showStatus(text) {
   statusEl.textContent = text;
 }

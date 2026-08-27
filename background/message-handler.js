@@ -177,6 +177,32 @@ async function batchCheckVideos(videoIds, context) {
   return results;
 }
 
+// 引导页的「实地试跑」：拿给定的元数据和一份还没保存的设置跑一遍判定，
+// 不碰网络、不写存储。复用真正的 evaluateByMode，避免引导页自己复刻一套判定逻辑。
+async function previewDecision(metadata, partialSettings) {
+  const current = await getSettings();
+  const settings = normalizeSettings({ ...current, ...(partialSettings && typeof partialSettings === "object" ? partialSettings : {}) });
+
+  // AI 模式要真实调接口，不适合试跑；调用方应该只在 weak/strong 下用这个接口
+  if (normalizeDecisionMode(settings.mode) === "ai") {
+    return { supported: false, shouldBlock: true, reason: "AI模式需要真实调用接口，无法离线试跑", mode: "ai" };
+  }
+
+  const meta = {
+    title: "", tname: "", desc: "", ownerName: "", ownerMid: "", ownerSign: "", tags: [],
+    ...(metadata && typeof metadata === "object" ? metadata : {})
+  };
+  const decision = await evaluateByMode(meta, settings);
+  return {
+    supported: true,
+    shouldBlock: decision.shouldBlock === true,
+    reason: decision.reason,
+    mode: decision.mode,
+    matchedAllowKeywords: decision.matchedAllowKeywords,
+    matchedBlockKeywords: decision.matchedBlockKeywords
+  };
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (!message || typeof message !== "object") return false;
 
@@ -191,6 +217,13 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     batchCheckVideos(message.videoIds, message.context)
       .then(results => sendResponse({ ok: true, results }))
       .catch(error => sendResponse({ ok: false, error: error.message, results: {} }));
+    return true;
+  }
+
+  if (message.type === "PREVIEW_DECISION") {
+    previewDecision(message.metadata, message.settings)
+      .then(decision => sendResponse({ ok: true, decision }))
+      .catch(error => sendResponse({ ok: false, error: error.message }));
     return true;
   }
 

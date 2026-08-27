@@ -1,0 +1,100 @@
+/* 首装引导页专属布局。通用组件在 ui/base.css，颜色令牌在 ui/tokens.css。 */
+
+body { display: grid; place-items: center; min-height: 100vh; padding: var(--s6) var(--s4); }
+
+.wizard {
+  width: min(680px, 100%);
+  padding: var(--s7);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-2);
+}
+
+/* ── 步骤指示 ── */
+.steps { display: flex; gap: var(--s2); margin-bottom: var(--s6); }
+.step-dot {
+  flex: 1;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  transition: background var(--dur) var(--ease);
+}
+.step-dot.is-done { background: var(--accent); }
+.step-dot.is-current { background: var(--accent); opacity: .55; }
+
+.step-count { margin-bottom: var(--s2); color: var(--text-muted); font-size: 12px; }
+
+.panel-title { margin-bottom: var(--s2); font-size: 20px; }
+.panel-lead { margin-bottom: var(--s5); color: var(--text-sub); font-size: 14px; line-height: 1.7; }
+
+.screen { display: none; }
+.screen.is-active { display: block; }
+
+/* ── 模式选择 ── */
+.choice-list { display: grid; gap: var(--s3); }
+.choice {
+  display: block;
+  padding: var(--s4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.choice:hover { background: var(--surface-hover); }
+.choice:has(input:checked) { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+.choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.choice-head { display: flex; align-items: center; gap: var(--s2); }
+.choice-name { font-size: 15px; font-weight: 650; }
+.choice-tag {
+  padding: 1px var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 11px;
+  font-weight: 600;
+}
+.choice-note { margin-top: 6px; color: var(--text-sub); font-size: 13px; line-height: 1.6; }
+
+/* ── 学科预设包 ── */
+.pack-row { display: flex; flex-wrap: wrap; gap: var(--s2); margin-bottom: var(--s3); }
+.pack-btn { padding: 5px var(--s3); border-radius: var(--r-pill); font-size: 12px; font-weight: 500; }
+
+.count-line { margin-top: var(--s2); font-size: 12px; color: var(--text-sub); }
+.count-line.is-warn { color: var(--warn); font-weight: 600; }
+
+/* ── 试跑结果 ── */
+.trial-list { display: grid; gap: var(--s2); }
+.trial-item {
+  display: flex; align-items: flex-start; gap: var(--s3);
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+}
+.trial-verdict {
+  flex: 0 0 auto;
+  padding: 2px var(--s2);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 650;
+}
+.trial-verdict.is-block { background: color-mix(in oklab, var(--danger) 16%, var(--surface)); color: var(--danger); }
+.trial-verdict.is-pass  { background: color-mix(in oklab, var(--success) 16%, var(--surface)); color: var(--success); }
+.trial-body { min-width: 0; }
+.trial-title { font-size: 13px; font-weight: 600; }
+.trial-reason { margin-top: 2px; color: var(--text-sub); font-size: 12px; }
+
+/* ── 底部导航 ── */
+.wizard-actions {
+  display: flex; align-items: center; gap: var(--s3);
+  margin-top: var(--s6); padding-top: var(--s5);
+  border-top: 1px solid var(--border);
+}
+.wizard-actions .spacer { flex: 1; }
+.wizard-status { min-height: 18px; margin-top: var(--s2); color: var(--text-sub); font-size: 12px; }
+
+@media (max-width: 620px) {
+  .wizard { padding: var(--s5) var(--s4); }
+}

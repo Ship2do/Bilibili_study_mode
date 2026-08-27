@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>欢迎使用 B站学习模式</title>
+    <link rel="stylesheet" href="ui/tokens.css" />
+    <link rel="stylesheet" href="ui/base.css" />
+    <link rel="stylesheet" href="ui/welcome.css" />
+  </head>
+  <body>
+    <main class="wizard">
+      <div class="steps" id="steps"></div>
+      <p class="step-count" id="stepCount"></p>
+
+      <!-- 1. 欢迎 -->
+      <section class="screen is-active" data-step="0">
+        <h1 class="panel-title">先花一分钟，把规则配好</h1>
+        <p class="panel-lead">
+          打开B站视频时，扩展会先取这个视频的标题、分区、标签，按你设的规则判断该不该看。
+          不符合就拦下来。
+        </p>
+        <p class="warn">
+          直接用默认配置会很难受：默认是<strong>白名单</strong>，只放行命中学习关键词的视频，
+          其余一律拦截。所以下面这几步值得配一下。
+        </p>
+      </section>
+
+      <!-- 2. 判定模式 -->
+      <section class="screen" data-step="1">
+        <h1 class="panel-title">你想怎么判断？</h1>
+        <p class="panel-lead">两种思路，第一次用建议从宽松的那种开始，习惯之后再收紧。</p>
+        <div class="choice-list">
+          <label class="choice">
+            <span class="choice-head">
+              <input type="radio" name="mode" value="weak" />
+              <span class="choice-name">弱模式（黑名单）</span>
+              <span class="choice-tag">推荐先用这个</span>
+            </span>
+            <span class="choice-note">只拦命中屏蔽词的视频，其余都放行。误伤少，适合先适应。</span>
+          </label>
+          <label class="choice">
+            <span class="choice-head">
+              <input type="radio" name="mode" value="strong" />
+              <span class="choice-name">强模式（白名单）</span>
+            </span>
+            <span class="choice-note">只放行命中学习词的视频，其余全拦。最严格，但关键词配少了会几乎全站被拦。</span>
+          </label>
+        </div>
+        <p class="hint mt-3">AI 模式需要自备接口地址和密钥，装好后可以在详细设置里配置。</p>
+      </section>
+
+      <!-- 3. 关键词 -->
+      <section class="screen" data-step="2">
+        <h1 class="panel-title" id="keywordTitle">配一下关键词</h1>
+        <p class="panel-lead" id="keywordLead"></p>
+        <div class="pack-row" id="packRow"></div>
+        <div class="chips-wrap" id="keywordChips">
+          <input class="chip-input" id="keywordChipInput" placeholder="输入关键词后回车..." />
+        </div>
+        <p class="count-line" id="keywordCount"></p>
+      </section>
+
+      <!-- 4. 外观 -->
+      <section class="screen" data-step="3">
+        <h1 class="panel-title">挑个顺眼的外观</h1>
+        <p class="panel-lead">这些随时可以改，开了专注密码锁也不受限制。</p>
+        <div class="grid2">
+          <div class="item">
+            <label class="label" for="uiTheme">主题</label>
+            <select id="uiTheme">
+              <option value="auto">跟随系统</option>
+              <option value="light">亮色</option>
+              <option value="dark">暗色</option>
+            </select>
+          </div>
+          <div class="item">
+            <label class="label">强调色</label>
+            <div class="accent-row" id="accentRow"></div>
+          </div>
+        </div>
+        <div class="item mt-3">
+          <label class="label">被拦住的时候怎么提示你</label>
+          <div class="presentation-grid">
+            <label class="presentation-card" data-kind="overlay">
+              <span class="presentation-figure"></span>
+              <span class="row">
+                <input type="radio" name="blockPresentation" value="overlay" />
+                <span class="mode-title">全屏遮罩</span>
+              </span>
+              <span class="mode-note">最强，完全挡住</span>
+            </label>
+            <label class="presentation-card" data-kind="card">
+              <span class="presentation-figure"></span>
+              <span class="row">
+                <input type="radio" name="blockPresentation" value="card" />
+                <span class="mode-title">毛玻璃卡片</span>
+              </span>
+              <span class="mode-note">页面可见但拦住点击</span>
+            </label>
+            <label class="presentation-card" data-kind="toast">
+              <span class="presentation-figure"></span>
+              <span class="row">
+                <input type="radio" name="blockPresentation" value="toast" />
+                <span class="mode-title">顶部提示条</span>
+              </span>
+              <span class="mode-note">最弱，不阻断观看</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. 密码锁 -->
+      <section class="screen" data-step="4">
+        <h1 class="panel-title">要不要上把锁？</h1>
+        <p class="panel-lead">
+          开启后，任何会降低专注度的改动（切到宽松模式、关掉拦截、把遮罩调淡）都需要密码。
+          <strong>最有效的用法是让室友或家人来设，并且不告诉你。</strong>
+        </p>
+        <div class="item">
+          <label class="row">
+            <input id="focusLockEnabled" type="checkbox" />
+            <span>启用专注密码锁</span>
+          </label>
+        </div>
+        <div class="grid2" id="passwordFields">
+          <div class="item">
+            <label class="label" for="newPassword">设置密码</label>
+            <input id="newPassword" type="password" placeholder="至少 4 位" />
+          </div>
+          <div class="item">
+            <label class="label" for="confirmPassword">确认密码</label>
+            <input id="confirmPassword" type="password" placeholder="再次输入" />
+          </div>
+        </div>
+        <p class="hint">跳过也没关系，随时可以在详细设置里开启。</p>
+      </section>
+
+      <!-- 6. 试跑 -->
+      <section class="screen" data-step="5">
+        <h1 class="panel-title">用你刚配的规则试一下</h1>
+        <p class="panel-lead">下面三个是示例视频，看看判定结果符不符合你的预期。</p>
+        <div class="trial-list" id="trialList"></div>
+        <p class="hint mt-3">结果不满意？点「上一步」回去改关键词，改完这里会重新算。</p>
+      </section>
+
+      <div class="wizard-actions">
+        <button type="button" id="back">上一步</button>
+        <span class="spacer"></span>
+        <button type="button" id="skip" class="btn-ghost">跳过引导</button>
+        <button type="button" class="primary" id="next">下一步</button>
+      </div>
+      <p class="wizard-status" id="status"></p>
+    </main>
+
+    <script src="shared/constants.js"></script>
+    <script src="ui/theme.js"></script>
+    <script src="welcome.js"></script>
+  </body>
+</html>

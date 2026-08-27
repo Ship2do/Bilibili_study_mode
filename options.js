@@ -30,6 +30,7 @@ const TIME_RULE_MODE_OPTIONS = [
 ];
 
 const modeInputs = Array.from(document.querySelectorAll("input[name='mode']"));
+const modeAlert = document.getElementById("modeAlert");
 const actionBlockVideoInput = document.getElementById("actionBlockVideo");
 const actionHideCoverInput = document.getElementById("actionHideCover");
 const autoNotInterestedEnabledInput = document.getElementById("autoNotInterestedEnabled");
@@ -157,6 +158,7 @@ function renderChips(wrap, input, keywords) {
     chip.querySelector(".chip-x").addEventListener("click", (e) => {
       e.stopPropagation();
       chip.remove();
+      refreshModeAlert();
     });
     wrap.insertBefore(chip, input);
   }
@@ -165,6 +167,21 @@ function renderChips(wrap, input, keywords) {
 function readChips(wrap) {
   return Array.from(wrap.querySelectorAll(".chip")).map((el) => el.dataset.value).filter(Boolean);
 }
+
+// 强模式 + 关键词太少 = 几乎全站被拦，是这个扩展最大的体验陷阱。
+// 引导页只跑一次，而设置页天天见，所以这条提示比引导更重要。
+function refreshModeAlert() {
+  if (!modeAlert) return;
+  const count = readChips(allowChipsWrap).length;
+  const isStrong = getSelectedMode() === "strong";
+  if (!isStrong || count >= 3) { modeAlert.hidden = true; return; }
+  modeAlert.hidden = false;
+  modeAlert.textContent = count === 0
+    ? "强模式下没有学习关键词，所有视频都会被拦截。请到下面的「关键词库」至少添加一个。"
+    : `强模式下只有 ${count} 个学习关键词，绝大多数视频都会被拦掉。建议多加几个。`;
+}
+
+for (const input of modeInputs) input.addEventListener("change", refreshModeAlert);
 
 function setupChipInput(wrap, input) {
   wrap.addEventListener("click", () => input.focus());
@@ -177,10 +194,11 @@ function setupChipInput(wrap, input) {
       if (existing.includes(value)) { input.value = ""; return; }
       renderChips(wrap, input, [...existing, value]);
       input.value = "";
+      refreshModeAlert();
     }
     if (e.key === "Backspace" && input.value === "") {
       const chips = wrap.querySelectorAll(".chip");
-      if (chips.length) chips[chips.length - 1].remove();
+      if (chips.length) { chips[chips.length - 1].remove(); refreshModeAlert(); }
     }
   });
 }
@@ -533,6 +551,7 @@ function fillForm(settings) {
 
   refreshBlockAppearance();
   refreshBlockStrength();
+  refreshModeAlert();
 
   renderChips(allowChipsWrap, allowChipInput, currentSettings.allowKeywords || []);
   renderChips(blockChipsWrap, blockChipInput, currentSettings.blockKeywords || []);
