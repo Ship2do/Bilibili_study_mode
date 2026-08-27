@@ -45,18 +45,14 @@
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
   --s5: 20px; --s6: 24px; --s7: 32px;
 
-  /* ── 圆角（三档由 html[data-radius] 覆盖，默认 soft） ── */
+  /* ── 圆角 ── */
   --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
   --r-pill: 999px;
 
-  /* ── 字体（三档由 html[data-font] 覆盖，默认 system）──
-   * 中文优先。mono 也必须带中文兜底，否则中文回落到系统默认字体会导致行高跳动。 */
+  /* ── 字体：中文优先 ── */
   --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
                  "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei",
                  "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
-  --font-serif:  "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", SimSun, Georgia, serif;
-  --font-mono:   ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas,
-                 "Microsoft YaHei", monospace;
   --font-ui: var(--font-system);
 
   /* ── 阴影与动效 ── */
@@ -79,16 +75,6 @@ html[data-accent="teal"]    { --accent: light-dark(#0d9488, #2dd4bf); }
 html[data-accent="amber"]   { --accent: light-dark(#b45309, #fbbf24); }
 html[data-accent="rose"]    { --accent: light-dark(#be185d, #f472b6); }
 html[data-accent="slate"]   { --accent: light-dark(#475569, #94a3b8); }
-
-/* ── 圆角档位 ── */
-html[data-radius="sharp"] { --r-sm: 2px;  --r-md: 4px;  --r-lg: 6px; }
-html[data-radius="soft"]  { --r-sm: 6px;  --r-md: 10px; --r-lg: 14px; }
-html[data-radius="round"] { --r-sm: 10px; --r-md: 16px; --r-lg: 22px; }
-
-/* ── 字体档位 ── */
-html[data-font="system"] { --font-ui: var(--font-system); }
-html[data-font="serif"]  { --font-ui: var(--font-serif); }
-html[data-font="mono"]   { --font-ui: var(--font-mono); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

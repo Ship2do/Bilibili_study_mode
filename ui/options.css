@@ -54,8 +54,6 @@
   box-shadow: inset 0 0 0 2px var(--accent);
 }
 .mode-card:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.mode-title { font-size: 14px; font-weight: 650; }
-.mode-note { color: var(--text-sub); font-size: 12px; line-height: 1.5; }
 
 /* ── 强模式关键词过少的动态警示 ── */
 .mode-alert { margin-top: var(--s3); }
@@ -109,67 +107,7 @@
   border-top: 1px dashed var(--border-strong);
 }
 
-/* ── 横幅字样预览 ──
- * 用与拦截界面同色系的警示条呈现，让「横幅长什么样」在设置页就能看到。 */
-.banner-preview {
-  display: flex; align-items: center; justify-content: center;
-  height: 34px;
-  margin-top: var(--s2);
-  border-radius: var(--r-sm);
-  background: light-dark(#d13438, #b3282c);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: .08em;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, .45);
-  overflow: hidden;
-  white-space: nowrap;
-}
 
-/* ── 拦截外观预览 ── */
-.preview-frame {
-  position: relative;
-  height: 132px;
-  margin-top: var(--s2);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: #0d0f13;
-}
-.preview-frame > .hint { position: absolute; inset: 0; display: grid; place-items: center; }
-.preview-note { margin-top: var(--s2); }
-
-@keyframes sg-preview-scroll {
-  from { transform: translateX(-12%) rotate(var(--preview-angle, 0deg)); }
-  to   { transform: translateX(12%) rotate(var(--preview-angle, 0deg)); }
-}
-
-/* 呈现方式选择：三张小卡 */
-.presentation-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s3); }
-.presentation-card {
-  display: flex; flex-direction: column; gap: var(--s2);
-  padding: var(--s3);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-md);
-  background: var(--surface);
-  cursor: pointer;
-}
-.presentation-card:has(input:checked) { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
-.presentation-figure {
-  position: relative;
-  height: 52px;
-  border-radius: var(--r-sm);
-  background: var(--surface-2);
-  overflow: hidden;
-}
-.presentation-figure::before {
-  content: "";
-  position: absolute;
-  background: color-mix(in oklab, var(--text) 55%, transparent);
-}
-.presentation-card[data-kind="overlay"] .presentation-figure::before { inset: 0; }
-.presentation-card[data-kind="card"] .presentation-figure::before { inset: 22% 18%; border-radius: 4px; }
-.presentation-card[data-kind="toast"] .presentation-figure::before { inset: 6% 18% auto; height: 26%; border-radius: 4px; }
 
 /* ── 强度区块的锁标记 ── */
 .locked-badge {
@@ -184,39 +122,6 @@
   vertical-align: 1px;
 }
 
-/* ── 滑块与档位标签 ── */
-.slider-row { display: flex; align-items: center; gap: var(--s3); }
-.slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
-.tier-label {
-  min-width: 84px;
-  color: var(--text-sub);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
-
-/* ── 强调色选择 ── */
-.accent-row { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.accent-swatch { position: relative; width: 30px; height: 30px; }
-.accent-swatch input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
-.accent-dot {
-  display: block;
-  width: 100%; height: 100%;
-  border-radius: var(--r-pill);
-  border: 2px solid transparent;
-  box-shadow: inset 0 0 0 2px var(--surface);
-  pointer-events: none;
-}
-/* 色块用与 tokens.css 相同的 light-dark() 取值，显示的就是当前明暗下的真实颜色 */
-.accent-dot[data-accent="crimson"] { background: light-dark(#d13438, #ff6b6e); }
-.accent-dot[data-accent="indigo"]  { background: light-dark(#4f46e5, #818cf8); }
-.accent-dot[data-accent="teal"]    { background: light-dark(#0d9488, #2dd4bf); }
-.accent-dot[data-accent="amber"]   { background: light-dark(#b45309, #fbbf24); }
-.accent-dot[data-accent="rose"]    { background: light-dark(#be185d, #f472b6); }
-.accent-dot[data-accent="slate"]   { background: light-dark(#475569, #94a3b8); }
-
-.accent-swatch input:checked + .accent-dot { border-color: var(--text); }
-.accent-swatch input:focus-visible + .accent-dot { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ── 底部动作与状态 ── */
 .actions { display: flex; gap: var(--s3); }

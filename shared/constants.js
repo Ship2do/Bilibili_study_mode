@@ -24,16 +24,12 @@ const ACCENT_PRESETS = ["crimson", "indigo", "teal", "amber", "rose", "slate"];
 // 判断依据是「改了之后是不是更容易看到被拦的视频」，不是「改的是不是外观」。
 const UI_SETTINGS_SCHEMA = Object.freeze({
   // ── 样式类 ──
+  // uiAccent 在界面上叫「主题色」，字段名保持不变以免动到已有用户的存储
   uiTheme: { type: "enum", values: ["auto", "light", "dark"], default: "auto" },
   uiAccent: { type: "accent", default: "crimson" },
-  uiFont: { type: "enum", values: ["system", "serif", "mono"], default: "system" },
-  uiRadius: { type: "enum", values: ["sharp", "soft", "round"], default: "soft" },
   blockBannerDensity: { type: "int", min: 0, max: 36, default: 18 },
-  blockBannerSpeed: { type: "int", min: 1, max: 10, default: 5 },
-  blockBannerHue: { type: "int", min: 0, max: 359, default: 355 },
+  blockBannerColor: { type: "enum", values: ["red", "orange", "amber", "green", "blue", "purple", "slate"], default: "red" },
   blockShowVideoInfo: { type: "bool", default: true },
-  blockTitleText: { type: "text", maxLength: 20, default: "" },
-  blockEncourageText: { type: "text", maxLength: 40, default: "" },
 
   // ── 强度类 ──
   blockPresentation: { type: "enum", values: ["overlay", "card", "toast"], default: "overlay" },

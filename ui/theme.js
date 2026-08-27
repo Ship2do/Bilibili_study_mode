@@ -3,7 +3,7 @@
  *
  * 亮/暗/跟随系统由 CSS 的 light-dark() 负责，这里只写 data-* 属性去切换
  * color-scheme —— 所以首帧就是正确的主题，不存在 JS 上色导致的闪烁。
- * 只有自定义强调色需要 JS 直接算，因为它不在预设表里。
+ * 只有自定义主题色需要 JS 直接算，因为它不在预设表里。
  */
 
 const ACCENT_PRESET_NAMES = ["crimson", "indigo", "teal", "amber", "rose", "slate"];
@@ -27,9 +27,6 @@ function applyTheme(settings) {
   const theme = ["light", "dark"].includes(source.uiTheme) ? source.uiTheme : "";
   if (theme) root.dataset.theme = theme;
   else delete root.dataset.theme;
-
-  root.dataset.radius = ["sharp", "soft", "round"].includes(source.uiRadius) ? source.uiRadius : "soft";
-  root.dataset.font = ["system", "serif", "mono"].includes(source.uiFont) ? source.uiFont : "system";
 
   const accent = String(source.uiAccent || "crimson").trim().toLowerCase();
   if (ACCENT_PRESET_NAMES.includes(accent)) {

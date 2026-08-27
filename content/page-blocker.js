@@ -96,9 +96,7 @@ function blockPage(rawResult, state) {
 
   if (refs) {
     refs.badge.textContent = getModeLabel(result.mode);
-    refs.title.textContent = String(state.settings.blockTitleText || "").trim() || "已拦截";
     refs.reason.textContent = `原因：${getBlockReasonText(result)}`;
-    refs.encourage.textContent = pickEncouragement(state.settings.blockEncourageText, videoKey);
 
     const showInfo = state.settings.blockShowVideoInfo !== false;
     refs.videoInfo.hidden = !showInfo;

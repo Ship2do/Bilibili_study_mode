@@ -29,7 +29,7 @@
       <!-- 2. 判定模式 -->
       <section class="screen" data-step="1">
         <h1 class="panel-title">你想怎么判断？</h1>
-        <p class="panel-lead">两种思路，第一次用建议从宽松的那种开始，习惯之后再收紧。</p>
+        <p class="panel-lead">第一次用建议从宽松的开始，习惯之后再收紧。</p>
         <div class="choice-list">
           <label class="choice">
             <span class="choice-head">
@@ -46,19 +46,47 @@
             </span>
             <span class="choice-note">只放行命中学习词的视频，其余全拦。最严格，但关键词配少了会几乎全站被拦。</span>
           </label>
+          <label class="choice">
+            <span class="choice-head">
+              <input type="radio" name="mode" value="ai" />
+              <span class="choice-name">AI 模式</span>
+            </span>
+            <span class="choice-note">把标题、分区、标签交给 AI 判断是不是娱乐向。判定最灵活，但需要你自备接口地址和密钥。</span>
+          </label>
         </div>
-        <p class="hint mt-3">AI 模式需要自备接口地址和密钥，装好后可以在详细设置里配置。</p>
       </section>
 
-      <!-- 3. 关键词 -->
+      <!-- 3. 关键词 / AI 配置 -->
       <section class="screen" data-step="2">
         <h1 class="panel-title" id="keywordTitle">配一下关键词</h1>
         <p class="panel-lead" id="keywordLead"></p>
-        <div class="pack-row" id="packRow"></div>
-        <div class="chips-wrap" id="keywordChips">
-          <input class="chip-input" id="keywordChipInput" placeholder="输入关键词后回车..." />
+
+        <div id="keywordPane">
+          <div class="pack-row" id="packRow"></div>
+          <div class="chips-wrap" id="keywordChips">
+            <input class="chip-input" id="keywordChipInput" placeholder="输入关键词后回车..." />
+          </div>
+          <p class="count-line" id="keywordCount"></p>
         </div>
-        <p class="count-line" id="keywordCount"></p>
+
+        <div id="aiPane" class="is-hidden">
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="aiApiUrl">API URL</label>
+              <input id="aiApiUrl" type="text" placeholder="https://api.deepseek.com" />
+            </div>
+            <div class="item">
+              <label class="label" for="aiModel">Model</label>
+              <input id="aiModel" type="text" placeholder="deepseek-chat" />
+            </div>
+          </div>
+          <div class="item">
+            <label class="label" for="aiApiKey">API Key</label>
+            <input id="aiApiKey" type="password" placeholder="sk-..." />
+          </div>
+          <p class="hint">填 Base URL 即可，系统会自动补全 <code>/v1/chat/completions</code>。保存时浏览器会请求访问该域名的权限。</p>
+          <p class="count-line" id="aiCount"></p>
+        </div>
       </section>
 
       <!-- 4. 外观 -->
@@ -67,7 +95,7 @@
         <p class="panel-lead">这些随时可以改，开了专注密码锁也不受限制。</p>
         <div class="grid2">
           <div class="item">
-            <label class="label" for="uiTheme">主题</label>
+            <label class="label" for="uiTheme">明暗</label>
             <select id="uiTheme">
               <option value="auto">跟随系统</option>
               <option value="light">亮色</option>
@@ -75,36 +103,64 @@
             </select>
           </div>
           <div class="item">
-            <label class="label">强调色</label>
+            <label class="label">主题色</label>
             <div class="accent-row" id="accentRow"></div>
           </div>
         </div>
+
+        <div class="item mt-3">
+          <label class="row">
+            <input id="blockBannerEnabled" type="checkbox" checked />
+            <span>拦截时显示警示横幅</span>
+          </label>
+        </div>
+        <div class="grid2" id="bannerFields">
+          <div class="item">
+            <label class="label" for="blockBannerText">横幅字样</label>
+            <input id="blockBannerText" type="text" placeholder="学习！" maxlength="20" />
+          </div>
+          <div class="item">
+            <label class="label" for="blockBannerDensity">横幅密度</label>
+            <div class="slider-row">
+              <input id="blockBannerDensity" type="range" min="1" max="36" step="1" value="18" />
+              <span class="tier-label" id="bannerDensityLabel"></span>
+            </div>
+          </div>
+        </div>
+        <div class="item" id="bannerColorField">
+          <label class="label">横幅颜色</label>
+          <div class="accent-row" id="bannerColorRow"></div>
+        </div>
+        <div class="item" id="bannerPreviewField">
+          <div class="preview-frame"><div class="preview-stage" id="bannerPreview"></div></div>
+        </div>
+
         <div class="item mt-3">
           <label class="label">被拦住的时候怎么提示你</label>
           <div class="presentation-grid">
             <label class="presentation-card" data-kind="overlay">
               <span class="presentation-figure"></span>
               <span class="row">
-                <input type="radio" name="blockPresentation" value="overlay" />
-                <span class="mode-title">全屏遮罩</span>
-              </span>
-              <span class="mode-note">最强，完全挡住</span>
+                  <input type="radio" name="blockPresentation" value="overlay" />
+                  <span class="mode-title">全屏遮罩</span>
+                  <span class="mode-note">最强，完全挡住</span>
+                </span>
             </label>
             <label class="presentation-card" data-kind="card">
               <span class="presentation-figure"></span>
               <span class="row">
-                <input type="radio" name="blockPresentation" value="card" />
-                <span class="mode-title">毛玻璃卡片</span>
-              </span>
-              <span class="mode-note">页面可见但拦住点击</span>
+                  <input type="radio" name="blockPresentation" value="card" />
+                  <span class="mode-title">毛玻璃卡片</span>
+                  <span class="mode-note">页面可见但拦住点击</span>
+                </span>
             </label>
             <label class="presentation-card" data-kind="toast">
               <span class="presentation-figure"></span>
               <span class="row">
-                <input type="radio" name="blockPresentation" value="toast" />
-                <span class="mode-title">顶部提示条</span>
-              </span>
-              <span class="mode-note">最弱，不阻断观看</span>
+                  <input type="radio" name="blockPresentation" value="toast" />
+                  <span class="mode-title">顶部提示条</span>
+                  <span class="mode-note">最弱，不阻断观看</span>
+                </span>
             </label>
           </div>
         </div>
@@ -154,6 +210,7 @@
     </main>
 
     <script src="shared/constants.js"></script>
+    <script src="shared/banner.js"></script>
     <script src="ui/theme.js"></script>
     <script src="welcome.js"></script>
   </body>

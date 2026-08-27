@@ -39,14 +39,9 @@ const blockBannerEnabledInput = document.getElementById("blockBannerEnabled");
 const blockBannerTextInput = document.getElementById("blockBannerText");
 const bannerPreview = document.getElementById("bannerPreview");
 const blockBannerDensityInput = document.getElementById("blockBannerDensity");
-const blockBannerSpeedInput = document.getElementById("blockBannerSpeed");
-const blockBannerHueInput = document.getElementById("blockBannerHue");
+const bannerColorRow = document.getElementById("bannerColorRow");
 const bannerDensityLabel = document.getElementById("bannerDensityLabel");
-const bannerSpeedLabel = document.getElementById("bannerSpeedLabel");
-const bannerHueLabel = document.getElementById("bannerHueLabel");
 const blockShowVideoInfoInput = document.getElementById("blockShowVideoInfo");
-const blockTitleTextInput = document.getElementById("blockTitleText");
-const blockEncourageTextInput = document.getElementById("blockEncourageText");
 
 const presentationInputs = Array.from(document.querySelectorAll("input[name='blockPresentation']"));
 const blockOpacityInput = document.getElementById("blockOpacity");
@@ -71,8 +66,6 @@ const aiPromptInput = document.getElementById("aiPrompt");
 const aiPermissionHint = document.getElementById("aiPermissionHint");
 
 const uiThemeInput = document.getElementById("uiTheme");
-const uiFontInput = document.getElementById("uiFont");
-const uiRadiusInput = document.getElementById("uiRadius");
 const accentRow = document.getElementById("accentRow");
 
 const timeStrategyEnabledInput = document.getElementById("timeStrategyEnabled");
@@ -252,59 +245,84 @@ function setSelectedAccent(value) {
   for (const input of inputs) input.checked = input === match;
 }
 
-// 外观是纯样式，改了立刻生效，不必先保存——所见即所得
+// 主题是纯样式，改了立刻生效，不必先保存——所见即所得
 function previewAppearance() {
-  applyTheme({
-    uiTheme: uiThemeInput.value,
-    uiFont: uiFontInput.value,
-    uiRadius: uiRadiusInput.value,
-    uiAccent: getSelectedAccent()
-  });
+  applyTheme({ uiTheme: uiThemeInput.value, uiAccent: getSelectedAccent() });
+  renderBannerPreview();
 }
 
 renderAccentOptions();
-for (const input of [uiThemeInput, uiFontInput, uiRadiusInput]) {
-  input.addEventListener("change", previewAppearance);
+renderBannerColorOptions();
+uiThemeInput.addEventListener("change", previewAppearance);
+autoScaleBannerStage(bannerPreview);
+
+// ── 横幅颜色 ──
+
+function renderBannerColorOptions() {
+  bannerColorRow.innerHTML = "";
+  for (const name of BANNER_COLOR_ORDER) {
+    const swatch = document.createElement("label");
+    swatch.className = "accent-swatch";
+    swatch.title = BANNER_COLOR_PRESETS[name].name;
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "blockBannerColor";
+    input.value = name;
+    input.addEventListener("change", refreshBlockAppearance);
+
+    const dot = document.createElement("span");
+    dot.className = "accent-dot";
+    dot.style.background = resolveBannerColor(name, currentScheme());
+
+    swatch.append(input, dot);
+    bannerColorRow.appendChild(swatch);
+  }
 }
 
-// ── 拦截界面外观：实时预览 ──
-// 用与拦截界面同一套 hue/speed/density 参数渲染几条缩小版横幅，
-// 让「密度」「速度」「色相」这三个抽象滑块可见即可得。
+function getSelectedBannerColor() {
+  const checked = bannerColorRow.querySelector("input:checked");
+  return checked ? checked.value : "red";
+}
+
+function setSelectedBannerColor(value) {
+  const inputs = Array.from(bannerColorRow.querySelectorAll("input"));
+  const match = inputs.find(input => input.value === value) || inputs[0];
+  for (const input of inputs) input.checked = input === match;
+}
+
+// 横幅颜色分明暗两版，得知道当前实际处于哪一档
+function currentScheme() {
+  const theme = uiThemeInput.value;
+  if (theme === "light" || theme === "dark") return theme;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+// ── 横幅实时预览 ──
+// 调 shared/banner.js 的 buildBannerLayer——和真正的拦截界面是同一份代码，
+// 舞台按 1600x900 渲染再整体缩放，所以预览与实际是同比例的。
 function renderBannerPreview() {
   if (!bannerPreview) return;
-  const text = blockBannerTextInput.value.trim() || "学习！";
-  const density = Number(blockBannerDensityInput.value);
-  const speed = Number(blockBannerSpeedInput.value);
-  const hue = Number(blockBannerHueInput.value);
-  const enabled = blockBannerEnabledInput.checked && density > 0;
-
+  const frame = bannerPreview.parentElement;
   bannerPreview.innerHTML = "";
-  if (!enabled) {
+  // 提示文字放在没有缩放的外层，否则会跟着舞台一起被缩小
+  for (const stale of frame.querySelectorAll(":scope > .hint")) stale.remove();
+
+  const density = Number(blockBannerDensityInput.value);
+  if (!blockBannerEnabledInput.checked || !(density > 0)) {
     const empty = document.createElement("span");
     empty.className = "hint";
     empty.textContent = "横幅已关闭";
-    bannerPreview.appendChild(empty);
+    frame.appendChild(empty);
     return;
   }
 
-  // 预览区只有真实屏幕的一小块，按比例缩条数，保持观感一致
-  const rows = Math.max(1, Math.round(density / 4));
-  for (let i = 0; i < rows; i++) {
-    const shift = ((i * 37) % 11) - 5;
-    const row = document.createElement("div");
-    // 角度走自定义属性，让 keyframes 里的 transform 能把旋转和平移合起来，
-    // 否则动画的 transform 会整个覆盖掉内联的 rotate
-    row.style.cssText = `
-      --preview-angle: ${((i * 53) % 40) - 20}deg;
-      position: absolute; left: -60%; width: 220%; height: 20px; line-height: 20px;
-      top: ${(i / rows) * 120 - 10}%;
-      background: hsl(${(hue + shift + 360) % 360} 70% 46%);
-      color: #fff; font-size: 12px; font-weight: 700; text-align: center; white-space: nowrap;
-      animation: sg-preview-scroll ${16 - speed}s linear infinite ${i % 2 ? "reverse" : "normal"};
-    `;
-    row.textContent = Array(20).fill(text).join("　　");
-    bannerPreview.appendChild(row);
-  }
+  const layer = buildBannerLayer(document, {
+    text: blockBannerTextInput.value.trim() || "学习！",
+    density,
+    color: resolveBannerColor(getSelectedBannerColor(), currentScheme())
+  });
+  bannerPreview.appendChild(layer);
 }
 
 function describeDensity(value) {
@@ -312,12 +330,6 @@ function describeDensity(value) {
   if (value <= 8) return `${value} · 稀疏`;
   if (value <= 22) return `${value} · 适中`;
   return `${value} · 密集`;
-}
-
-function describeSpeed(value) {
-  if (value <= 3) return `${value} · 缓慢`;
-  if (value <= 7) return `${value} · 适中`;
-  return `${value} · 快速`;
 }
 
 // 档位名要和 background/settings.js 里 opacityTier 的分档一致，
@@ -330,8 +342,6 @@ function describeOpacity(value) {
 
 function refreshBlockAppearance() {
   bannerDensityLabel.textContent = describeDensity(Number(blockBannerDensityInput.value));
-  bannerSpeedLabel.textContent = describeSpeed(Number(blockBannerSpeedInput.value));
-  bannerHueLabel.textContent = `${blockBannerHueInput.value}°`;
   renderBannerPreview();
 }
 
@@ -351,8 +361,7 @@ function getSelectedPresentation() {
   return checked ? checked.value : "overlay";
 }
 
-for (const input of [blockBannerEnabledInput, blockBannerTextInput, blockBannerDensityInput,
-  blockBannerSpeedInput, blockBannerHueInput]) {
+for (const input of [blockBannerEnabledInput, blockBannerTextInput, blockBannerDensityInput]) {
   input.addEventListener("input", refreshBlockAppearance);
   input.addEventListener("change", refreshBlockAppearance);
 }
@@ -520,8 +529,6 @@ function fillForm(settings) {
   currentSettings = { ...structuredClone(UI_DEFAULTS), ...source };
 
   uiThemeInput.value = currentSettings.uiTheme || "auto";
-  uiFontInput.value = currentSettings.uiFont || "system";
-  uiRadiusInput.value = currentSettings.uiRadius || "soft";
   setSelectedAccent(currentSettings.uiAccent);
   previewAppearance();
 
@@ -533,11 +540,8 @@ function fillForm(settings) {
   blockBannerEnabledInput.checked = currentSettings.blockBannerEnabled !== false;
   blockBannerTextInput.value = String(currentSettings.blockBannerText || "学习！");
   blockBannerDensityInput.value = String(currentSettings.blockBannerDensity ?? 18);
-  blockBannerSpeedInput.value = String(currentSettings.blockBannerSpeed ?? 5);
-  blockBannerHueInput.value = String(currentSettings.blockBannerHue ?? 355);
+  setSelectedBannerColor(currentSettings.blockBannerColor || "red");
   blockShowVideoInfoInput.checked = currentSettings.blockShowVideoInfo !== false;
-  blockTitleTextInput.value = String(currentSettings.blockTitleText || "");
-  blockEncourageTextInput.value = String(currentSettings.blockEncourageText || "");
 
   const presentation = ["overlay", "card", "toast"].includes(currentSettings.blockPresentation)
     ? currentSettings.blockPresentation : "overlay";
@@ -673,19 +677,14 @@ function buildPayload() {
 
   const payload = {
     uiTheme: uiThemeInput.value,
-    uiFont: uiFontInput.value,
-    uiRadius: uiRadiusInput.value,
     uiAccent: getSelectedAccent(),
     mode, actionBlockVideo, actionHideCover,
     autoNotInterestedEnabled: autoNotInterestedEnabledInput.checked,
     blockBannerEnabled: blockBannerEnabledInput.checked,
     blockBannerText: String(blockBannerTextInput.value || "").trim() || "学习！",
     blockBannerDensity: clampNumber(blockBannerDensityInput.value, 0, 36, 18),
-    blockBannerSpeed: clampNumber(blockBannerSpeedInput.value, 1, 10, 5),
-    blockBannerHue: clampNumber(blockBannerHueInput.value, 0, 359, 355),
+    blockBannerColor: getSelectedBannerColor(),
     blockShowVideoInfo: blockShowVideoInfoInput.checked,
-    blockTitleText: String(blockTitleTextInput.value || "").trim(),
-    blockEncourageText: String(blockEncourageTextInput.value || "").trim(),
     blockPresentation: getSelectedPresentation(),
     blockOpacity: clampNumber(blockOpacityInput.value, 60, 100, 97),
     blockScrollLock: blockScrollLockInput.checked,

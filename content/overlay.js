@@ -1,13 +1,5 @@
 const OVERLAY_ID = "__study_guard_overlay__";
 
-// 用户没自定义鼓励语时，按视频 key 稳定挑一条——同一个视频每次拦截看到的话一样，
-// 不同视频之间有变化，避免同一句话反复出现产生免疫。
-const BUILTIN_ENCOURAGEMENTS = [
-  "现在关掉，等会儿会感谢自己。",
-  "先把手头那件事做完。",
-  "这条视频明天还在，今天的时间不在。"
-];
-
 function getModeLabel(mode) {
   if (mode === "weak") return "弱模式";
   if (mode === "strong") return "强模式";
@@ -23,88 +15,20 @@ function getBlockReasonText(result) {
   return reason || "该视频未通过学习模式规则";
 }
 
-function pickEncouragement(customText, videoKey) {
-  const custom = String(customText || "").trim();
-  if (custom) return custom;
-  const key = String(videoKey || "");
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) % 100000;
-  return BUILTIN_ENCOURAGEMENTS[hash % BUILTIN_ENCOURAGEMENTS.length];
-}
-
-function seededRandom(seed) {
-  let s = seed;
-  return function () {
-    s = (s * 16807 + 0) % 2147483647;
-    return (s - 1) / 2147483646;
-  };
-}
-
-// 每条横幅的色相在基准色相上做一点随机扰动，制造「多条横幅色调微妙差异」的效果。
-// 扰动逻辑保持原样，只把基准色相、密度、速度提为可配置。
-function buildBanners(text, options) {
-  const container = document.createElement("div");
-  container.className = "sg-banners";
-  container.style.cssText = `
-    position: absolute; inset: 0; overflow: hidden;
-    pointer-events: none; z-index: 0;
-  `;
-
-  const rand = seededRandom(42);
-  const count = options.density;
-  const baseHue = options.hue;
-  const repeatedText = Array(25).fill(text).join("　　　");
-
-  for (let i = 0; i < count; i++) {
-    const angle = Math.round(rand() * 90 - 45);
-    const topPercent = (i / count) * 130 - 15;
-    // speed 1..10 映射到 15..6 秒，数值越大转得越快
-    const duration = 16 - options.speed + Math.round(rand() * 4);
-    const direction = rand() > 0.5 ? "normal" : "reverse";
-    const hueShift = Math.round(rand() * 10 - 5);
-    const hue = (baseHue + hueShift + 360) % 360;
-    const animClass = `sg-scroll-${i % 2}`;
-
-    const wrapper = document.createElement("div");
-    wrapper.style.cssText = `
-      position: absolute; left: -90%; top: ${topPercent}%;
-      width: 280%; height: 30px;
-      animation: ${animClass} ${duration}s linear infinite ${direction};
-    `;
-
-    const banner = document.createElement("div");
-    banner.style.cssText = `
-      width: 100%; height: 30px; line-height: 30px;
-      font-family: var(--sg-font); font-size: 16px; font-weight: 700;
-      letter-spacing: 2px;
-      color: rgba(255, 255, 255, 0.92);
-      background: hsl(${hue} var(--sg-banner-sat) var(--sg-banner-light));
-      text-align: center; white-space: nowrap;
-      transform: rotate(${angle}deg);
-      text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.4);
-    `;
-    banner.textContent = repeatedText;
-
-    wrapper.appendChild(banner);
-    container.appendChild(wrapper);
-  }
-
-  return container;
-}
-
-function bannerSignature(settings, presentation) {
+function bannerSignature(settings, presentation, scheme) {
   const enabled = presentation.showBanners && Number(settings.blockBannerDensity) > 0;
   return [
     enabled ? "1" : "0",
     settings.blockBannerText || "学习！",
     settings.blockBannerDensity,
-    settings.blockBannerSpeed,
-    settings.blockBannerHue
+    settings.blockBannerColor,
+    scheme
   ].join("|");
 }
 
-// 横幅只在文案/开关/密度/速度/色相/呈现方式变化时重建，纯换主题不动它。
-function applyBanners(host, root, settings, presentation, signature) {
+// 横幅只在文案/开关/密度/颜色/明暗/呈现方式变化时重建，纯换主题色不动它。
+// 实际构建走 shared/banner.js，与设置页的预览是同一份代码，保证所见即所得。
+function applyBanners(host, root, settings, presentation, scheme, signature) {
   host.dataset.sgBanner = signature;
   const existing = root.querySelector(".sg-banners");
   if (existing) existing.remove();
@@ -112,10 +36,10 @@ function applyBanners(host, root, settings, presentation, signature) {
   const density = Number(settings.blockBannerDensity);
   if (!presentation.showBanners || !(density > 0)) return;
 
-  root.insertBefore(buildBanners(settings.blockBannerText || "学习！", {
+  root.insertBefore(buildBannerLayer(document, {
+    text: settings.blockBannerText || "学习！",
     density,
-    speed: Number(settings.blockBannerSpeed) || 5,
-    hue: Number.isFinite(Number(settings.blockBannerHue)) ? Number(settings.blockBannerHue) : 355
+    color: resolveBannerColor(settings.blockBannerColor, scheme)
   }), root.firstChild);
 }
 
@@ -219,9 +143,6 @@ function createOverlay() {
   const reason = document.createElement("p");
   reason.className = "sg-reason";
 
-  const encourage = document.createElement("p");
-  encourage.className = "sg-encourage";
-
   const videoInfo = document.createElement("p");
   videoInfo.className = "sg-video-info";
 
@@ -249,11 +170,11 @@ function createOverlay() {
   continueBtn.hidden = true;
 
   actions.append(homeBtn, optBtn, continueBtn);
-  panel.append(badge, title, reason, encourage, videoInfo, actions);
+  panel.append(badge, title, reason, videoInfo, actions);
   root.appendChild(panel);
   (document.documentElement || document.body)?.appendChild(host);
 
-  return { host, root, style, panel, badge, title, reason, encourage, videoInfo, actions, homeBtn, optBtn, continueBtn };
+  return { host, root, style, panel, badge, title, reason, videoInfo, actions, homeBtn, optBtn, continueBtn };
 }
 
 function getOverlayRefs() {
@@ -278,9 +199,10 @@ function ensureOverlay(settings) {
   const presentation = resolvePresentation(settings);
   applyOverlayTheme(overlayRefs.host, settings, presentation);
 
-  const signature = bannerSignature(settings, presentation);
+  const scheme = resolveOverlayScheme(settings.uiTheme);
+  const signature = bannerSignature(settings, presentation, scheme);
   if (overlayRefs.host.dataset.sgBanner !== signature) {
-    applyBanners(overlayRefs.host, overlayRefs.root, settings, presentation, signature);
+    applyBanners(overlayRefs.host, overlayRefs.root, settings, presentation, scheme, signature);
   }
   return overlayRefs.host;
 }

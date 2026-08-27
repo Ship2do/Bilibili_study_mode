@@ -75,61 +75,30 @@
           </div>
         </div>
 
-        <!-- 外观 -->
+        <!-- 主题 -->
         <div class="section">
-          <h2 class="section-title">外观</h2>
-          <div class="grid3">
-            <div class="item">
-              <label class="label" for="uiTheme">主题</label>
-              <select id="uiTheme">
-                <option value="auto">跟随系统</option>
-                <option value="light">亮色</option>
-                <option value="dark">暗色</option>
-              </select>
-            </div>
-            <div class="item">
-              <label class="label" for="uiFont">字体</label>
-              <select id="uiFont">
-                <option value="system">系统默认</option>
-                <option value="serif">衬线</option>
-                <option value="mono">等宽</option>
-              </select>
-            </div>
-            <div class="item">
-              <label class="label" for="uiRadius">圆角</label>
-              <select id="uiRadius">
-                <option value="sharp">直角</option>
-                <option value="soft">适中</option>
-                <option value="round">圆润</option>
-              </select>
-            </div>
+          <h2 class="section-title">主题</h2>
+          <div class="item">
+            <label class="label" for="uiTheme">明暗</label>
+            <select id="uiTheme">
+              <option value="auto">跟随系统</option>
+              <option value="light">亮色</option>
+              <option value="dark">暗色</option>
+            </select>
           </div>
           <div class="item">
             <label class="label">
-              强调色
+              主题色
               <span class="tip">ⓘ<span class="tip-text">同时作用于设置页、弹出面板和拦截界面</span></span>
             </label>
             <div class="accent-row" id="accentRow"></div>
           </div>
-          <p class="hint">外观设置属于纯样式，即使开启了专注密码锁也可以随时修改。</p>
+          <p class="hint">主题属于纯样式，即使开启了专注密码锁也可以随时修改。</p>
         </div>
 
         <!-- 拦截界面外观 -->
         <div class="section">
           <h2 class="section-title">拦截界面外观</h2>
-          <div class="grid2">
-            <div class="item">
-              <label class="label" for="blockTitleText">标题文案</label>
-              <input id="blockTitleText" type="text" placeholder="已拦截" maxlength="20" />
-            </div>
-            <div class="item">
-              <label class="label" for="blockEncourageText">
-                鼓励语
-                <span class="tip">ⓘ<span class="tip-text">留空则从内置文案里按视频稳定挑一条</span></span>
-              </label>
-              <input id="blockEncourageText" type="text" placeholder="留空自动挑选" maxlength="40" />
-            </div>
-          </div>
           <div class="item">
             <label class="row">
               <input id="blockShowVideoInfo" type="checkbox" />
@@ -146,11 +115,11 @@
               </span>
             </label>
           </div>
-          <div class="item">
-            <label class="label" for="blockBannerText">横幅字样</label>
-            <input id="blockBannerText" type="text" placeholder="学习！" maxlength="20" />
-          </div>
-          <div class="grid3">
+          <div class="grid2">
+            <div class="item">
+              <label class="label" for="blockBannerText">横幅字样</label>
+              <input id="blockBannerText" type="text" placeholder="学习！" maxlength="20" />
+            </div>
             <div class="item">
               <label class="label" for="blockBannerDensity">横幅密度</label>
               <div class="slider-row">
@@ -158,25 +127,15 @@
                 <span class="tier-label" id="bannerDensityLabel"></span>
               </div>
             </div>
-            <div class="item">
-              <label class="label" for="blockBannerSpeed">滚动速度</label>
-              <div class="slider-row">
-                <input id="blockBannerSpeed" type="range" min="1" max="10" step="1" />
-                <span class="tier-label" id="bannerSpeedLabel"></span>
-              </div>
-            </div>
-            <div class="item">
-              <label class="label" for="blockBannerHue">横幅色相</label>
-              <div class="slider-row">
-                <input id="blockBannerHue" type="range" min="0" max="359" step="1" />
-                <span class="tier-label" id="bannerHueLabel"></span>
-              </div>
-            </div>
+          </div>
+          <div class="item">
+            <label class="label">横幅颜色</label>
+            <div class="accent-row" id="bannerColorRow"></div>
           </div>
           <div class="item">
             <label class="label">实时预览</label>
-            <div class="preview-frame" id="bannerPreview"></div>
-            <p class="hint preview-note">预览用的密度已按比例缩小，实际拦截界面会铺满整屏。</p>
+            <div class="preview-frame"><div class="preview-stage" id="bannerPreview"></div></div>
+            <p class="hint preview-note">预览与实际拦截界面用的是同一份渲染代码，只是整体等比缩小。</p>
           </div>
           <p class="hint">以上都属于纯样式，开启专注密码锁后依然可以随时修改。</p>
         </div>
@@ -195,24 +154,24 @@
                 <span class="row">
                   <input type="radio" name="blockPresentation" value="overlay" />
                   <span class="mode-title">全屏遮罩</span>
+                  <span class="mode-note">最强，完全挡住页面</span>
                 </span>
-                <span class="mode-note">最强，完全挡住页面</span>
               </label>
               <label class="presentation-card" data-kind="card">
                 <span class="presentation-figure"></span>
                 <span class="row">
                   <input type="radio" name="blockPresentation" value="card" />
                   <span class="mode-title">毛玻璃卡片</span>
+                  <span class="mode-note">页面可见但拦住点击</span>
                 </span>
-                <span class="mode-note">页面可见但拦住点击</span>
               </label>
               <label class="presentation-card" data-kind="toast">
                 <span class="presentation-figure"></span>
                 <span class="row">
                   <input type="radio" name="blockPresentation" value="toast" />
                   <span class="mode-title">顶部提示条</span>
+                  <span class="mode-note">最弱，不阻断观看</span>
                 </span>
-                <span class="mode-note">最弱，不阻断观看</span>
               </label>
             </div>
           </div>
@@ -380,6 +339,7 @@
     </main>
 
     <script src="shared/constants.js"></script>
+    <script src="shared/banner.js"></script>
     <script src="ui/theme.js"></script>
     <script src="options.js"></script>
   </body>

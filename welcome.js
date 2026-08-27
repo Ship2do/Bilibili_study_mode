@@ -47,10 +47,27 @@ const accentRow = document.getElementById("accentRow");
 
 const keywordTitle = document.getElementById("keywordTitle");
 const keywordLead = document.getElementById("keywordLead");
+const keywordPane = document.getElementById("keywordPane");
 const packRow = document.getElementById("packRow");
 const keywordChips = document.getElementById("keywordChips");
 const keywordChipInput = document.getElementById("keywordChipInput");
 const keywordCount = document.getElementById("keywordCount");
+
+const aiPane = document.getElementById("aiPane");
+const aiApiUrlInput = document.getElementById("aiApiUrl");
+const aiModelInput = document.getElementById("aiModel");
+const aiApiKeyInput = document.getElementById("aiApiKey");
+const aiCount = document.getElementById("aiCount");
+
+const blockBannerEnabledInput = document.getElementById("blockBannerEnabled");
+const blockBannerTextInput = document.getElementById("blockBannerText");
+const blockBannerDensityInput = document.getElementById("blockBannerDensity");
+const bannerDensityLabel = document.getElementById("bannerDensityLabel");
+const bannerColorRow = document.getElementById("bannerColorRow");
+const bannerPreview = document.getElementById("bannerPreview");
+const bannerFields = document.getElementById("bannerFields");
+const bannerColorField = document.getElementById("bannerColorField");
+const bannerPreviewField = document.getElementById("bannerPreviewField");
 
 const focusLockEnabledInput = document.getElementById("focusLockEnabled");
 const newPasswordInput = document.getElementById("newPassword");
@@ -115,6 +132,13 @@ function refreshKeywordCount() {
     ? `当前 ${count} 个学习关键词${count < 3 ? "——太少了，会拦掉绝大多数视频" : ""}`
     : `当前 ${count} 个屏蔽关键词`;
   keywordCount.classList.toggle("is-warn", isStrong && count < 3);
+  refreshNav();
+}
+
+function refreshAiCount() {
+  const ready = [aiApiUrlInput, aiModelInput, aiApiKeyInput].every(input => input.value.trim());
+  aiCount.textContent = ready ? "AI 配置已填写完整" : "三项都填完才能继续";
+  aiCount.classList.toggle("is-warn", !ready);
   refreshNav();
 }
 
@@ -185,16 +209,77 @@ function getSelectedPresentation() {
 
 function previewAppearance() {
   applyTheme({ uiTheme: uiThemeInput.value, uiAccent: getSelectedAccent() });
+  renderBannerPreview();
+}
+
+// ── 横幅 ──
+
+function currentScheme() {
+  const theme = uiThemeInput.value;
+  if (theme === "light" || theme === "dark") return theme;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function renderBannerColorOptions() {
+  bannerColorRow.innerHTML = "";
+  for (const name of BANNER_COLOR_ORDER) {
+    const swatch = document.createElement("label");
+    swatch.className = "accent-swatch";
+    swatch.title = BANNER_COLOR_PRESETS[name].name;
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "blockBannerColor";
+    input.value = name;
+    input.checked = name === "red";
+    input.addEventListener("change", renderBannerPreview);
+
+    const dot = document.createElement("span");
+    dot.className = "accent-dot";
+    dot.style.background = resolveBannerColor(name, currentScheme());
+
+    swatch.append(input, dot);
+    bannerColorRow.appendChild(swatch);
+  }
+}
+
+function getSelectedBannerColor() {
+  const checked = bannerColorRow.querySelector("input:checked");
+  return checked ? checked.value : "red";
+}
+
+// 与真正的拦截界面共用 shared/banner.js 的构建函数，舞台整体缩放，所见即所得
+function renderBannerPreview() {
+  const enabled = blockBannerEnabledInput.checked;
+  for (const el of [bannerFields, bannerColorField, bannerPreviewField]) {
+    el.classList.toggle("is-hidden", !enabled);
+  }
+  bannerDensityLabel.textContent = `${blockBannerDensityInput.value} 条`;
+  if (!enabled) return;
+
+  bannerPreview.innerHTML = "";
+  bannerPreview.appendChild(buildBannerLayer(document, {
+    text: blockBannerTextInput.value.trim() || "学习！",
+    density: Number(blockBannerDensityInput.value),
+    color: resolveBannerColor(getSelectedBannerColor(), currentScheme())
+  }));
 }
 
 // ── 表单 -> SET_SETTINGS ──
 // 抽成不碰 DOM 的纯函数，才能脱离浏览器直接测
 function buildOnboardingPayload(choices) {
-  const mode = choices.mode === "strong" ? "strong" : "weak";
+  const mode = ["weak", "strong", "ai"].includes(choices.mode) ? choices.mode : "weak";
   const keywords = Array.from(new Set((choices.keywords || []).map(w => String(w || "").trim()).filter(Boolean)));
 
   if (mode === "strong" && keywords.length === 0) {
     return { error: "强模式下至少要有一个学习关键词，否则几乎所有视频都会被拦" };
+  }
+
+  const aiApiUrl = String(choices.aiApiUrl || "").trim();
+  const aiModel = String(choices.aiModel || "").trim();
+  const aiApiKey = String(choices.aiApiKey || "").trim();
+  if (mode === "ai" && !(aiApiUrl && aiModel && aiApiKey)) {
+    return { error: "AI 模式需要填写 API URL、Model 和 API Key" };
   }
 
   const password = String(choices.password || "");
@@ -209,12 +294,17 @@ function buildOnboardingPayload(choices) {
     uiAccent: choices.uiAccent || "crimson",
     blockPresentation: ["overlay", "card", "toast"].includes(choices.blockPresentation)
       ? choices.blockPresentation : "overlay",
+    blockBannerEnabled: choices.blockBannerEnabled !== false,
+    blockBannerText: String(choices.blockBannerText || "").trim() || "学习！",
+    blockBannerDensity: Math.min(36, Math.max(0, Math.round(Number(choices.blockBannerDensity) || 18))),
+    blockBannerColor: BANNER_COLOR_PRESETS[choices.blockBannerColor] ? choices.blockBannerColor : "red",
     focusLockEnabled: choices.focusLockEnabled === true
   };
 
   // 强模式配的是白名单，弱模式配的是黑名单——同一个输入框，落到不同字段
   if (mode === "strong") payload.allowKeywords = keywords;
-  else payload.blockKeywords = keywords;
+  else if (mode === "weak") payload.blockKeywords = keywords;
+  else Object.assign(payload, { aiApiUrl, aiModel, aiApiKey });
 
   const auth = {};
   if (choices.focusLockEnabled && password) auth.newPassword = password;
@@ -226,9 +316,16 @@ function collectChoices() {
   return {
     mode: getSelectedMode(),
     keywords: readKeywords(),
+    aiApiUrl: aiApiUrlInput.value,
+    aiModel: aiModelInput.value,
+    aiApiKey: aiApiKeyInput.value,
     uiTheme: uiThemeInput.value,
     uiAccent: getSelectedAccent(),
     blockPresentation: getSelectedPresentation(),
+    blockBannerEnabled: blockBannerEnabledInput.checked,
+    blockBannerText: blockBannerTextInput.value,
+    blockBannerDensity: blockBannerDensityInput.value,
+    blockBannerColor: getSelectedBannerColor(),
     focusLockEnabled: focusLockEnabledInput.checked,
     password: newPasswordInput.value,
     confirmPassword: confirmPasswordInput.value
@@ -240,6 +337,16 @@ function collectChoices() {
 async function runTrial() {
   trialList.innerHTML = "";
   const mode = getSelectedMode();
+
+  // AI 判定要真实调接口，引导里不试跑（也不该在这一步烧用户的配额）
+  if (mode === "ai") {
+    const note = document.createElement("p");
+    note.className = "hint";
+    note.textContent = "AI 模式需要真实调用接口才能判定，这里不做试跑。装好后打开任意视频即可看到效果。";
+    trialList.appendChild(note);
+    return;
+  }
+
   const keywords = readKeywords();
   const override = mode === "strong" ? { mode, allowKeywords: keywords } : { mode, blockKeywords: keywords };
 
@@ -285,9 +392,13 @@ function renderSteps() {
   stepCountEl.textContent = `第 ${step + 1} / ${STEP_COUNT} 步`;
 }
 
-// 强模式 + 0 关键词直接卡住「下一步」，从流程上堵死「装完全站被拦」
+// 强模式 + 0 关键词直接卡住「下一步」，从流程上堵死「装完全站被拦」；
+// AI 模式配置不全同理，否则装完只会看到「AI配置不完整，已按安全策略拦截」。
 function canAdvance() {
-  if (step === 2 && getSelectedMode() === "strong" && readKeywords().length === 0) return false;
+  if (step !== 2) return true;
+  const mode = getSelectedMode();
+  if (mode === "strong") return readKeywords().length > 0;
+  if (mode === "ai") return [aiApiUrlInput, aiModelInput, aiApiKeyInput].every(input => input.value.trim());
   return true;
 }
 
@@ -307,13 +418,28 @@ function renderStep() {
   showStatus("");
 
   if (step === 2) {
-    const isStrong = getSelectedMode() === "strong";
-    keywordTitle.textContent = isStrong ? "配一下学习关键词（白名单）" : "配一下屏蔽关键词（黑名单）";
-    keywordLead.textContent = isStrong
-      ? "只有标题、分区或标签命中这些词的视频才会放行。点下面的学科包可以一键填充。"
-      : "命中这些词的视频会被拦下。已经预填了常见的娱乐类词，可以自己增删。";
-    refreshKeywordCount();
+    const mode = getSelectedMode();
+    const isAi = mode === "ai";
+    keywordPane.classList.toggle("is-hidden", isAi);
+    aiPane.classList.toggle("is-hidden", !isAi);
+
+    if (isAi) {
+      keywordTitle.textContent = "填一下 AI 接口";
+      keywordLead.textContent = "扩展会把视频的标题、分区、标签发给这个接口，由它判断是不是娱乐向。";
+      refreshAiCount();
+    } else {
+      const isStrong = mode === "strong";
+      keywordTitle.textContent = isStrong ? "配一下学习关键词（白名单）" : "配一下屏蔽关键词（黑名单）";
+      keywordLead.textContent = isStrong
+        ? "只有标题、分区或标签命中这些词的视频才会放行。点下面的学科包可以一键填充。"
+        : "命中这些词的视频会被拦下。已经预填了常见的娱乐类词，可以自己增删。";
+      // 学科包装的是「学习关键词」，弱模式配的是黑名单，用不上
+      packRow.classList.toggle("is-hidden", !isStrong);
+      refreshKeywordCount();
+    }
   }
+
+  if (step === 3) renderBannerPreview();
 
   if (step === 5) {
     trialList.textContent = "正在按你的规则试算…";
@@ -329,7 +455,15 @@ function resetKeywordsForMode() {
 }
 
 for (const input of modeInputs) input.addEventListener("change", resetKeywordsForMode);
+for (const input of [aiApiUrlInput, aiModelInput, aiApiKeyInput]) {
+  input.addEventListener("input", refreshAiCount);
+}
 uiThemeInput.addEventListener("change", previewAppearance);
+for (const input of [blockBannerEnabledInput, blockBannerTextInput, blockBannerDensityInput]) {
+  input.addEventListener("input", renderBannerPreview);
+  input.addEventListener("change", renderBannerPreview);
+}
+autoScaleBannerStage(bannerPreview);
 focusLockEnabledInput.addEventListener("change", () => {
   passwordFields.classList.toggle("is-hidden", !focusLockEnabledInput.checked);
 });
@@ -355,9 +489,32 @@ skipButton.addEventListener("click", () => {
   window.close();
 });
 
+// 扩展不再固定申请 <all_urls>，AI 接口域名要在保存时按需申请。
+// 必须在任何 await 之前同步调用，否则用户手势丢失、授权弹窗不会出现。
+function requestAiHostPermission(rawUrl) {
+  let pattern = "";
+  try {
+    const parsed = new URL(String(rawUrl || "").trim());
+    if (parsed.protocol === "https:") pattern = `${parsed.origin}/*`;
+  } catch (_e) { /* 地址不合法，交给后台报错 */ }
+  if (!pattern || !chrome.permissions) return Promise.resolve(true);
+  return new Promise(resolve => {
+    chrome.permissions.request({ origins: [pattern] }, granted => {
+      resolve(chrome.runtime.lastError ? false : granted === true);
+    });
+  });
+}
+
 async function finish() {
-  const built = buildOnboardingPayload(collectChoices());
+  const choices = collectChoices();
+  const built = buildOnboardingPayload(choices);
   if (built.error) { showStatus(built.error); return; }
+
+  let permissionWarning = "";
+  if (choices.mode === "ai") {
+    const granted = await requestAiHostPermission(choices.aiApiUrl);
+    if (!granted) permissionWarning = "（未授权访问该 AI 接口域名，AI 判定会失败，可在设置页重新保存以授权）";
+  }
 
   nextButton.disabled = true;
   showStatus("正在保存…");
@@ -369,7 +526,7 @@ async function finish() {
     return;
   }
 
-  showStatus("已保存，正在打开B站…");
+  showStatus(`已保存${permissionWarning}，正在打开B站…`);
   chrome.tabs.create({ url: "https://www.bilibili.com/" });
   window.close();
 }
@@ -378,6 +535,7 @@ async function finish() {
 
 renderPacks();
 renderAccents();
+renderBannerColorOptions();
 modeInputs.find(input => input.value === "weak").checked = true;
 presentationInputs.find(input => input.value === "overlay").checked = true;
 passwordFields.classList.add("is-hidden");

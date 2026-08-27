@@ -13,6 +13,8 @@
 // 明暗差异体现在中间那张面板上，遮罩的功能性不被削弱。
 const OVERLAY_SCRIM_RGB = "10, 12, 16";
 
+const OVERLAY_FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif`;
+
 const OVERLAY_PALETTE = {
   light: {
     "--sg-panel-bg": "#ffffff",
@@ -25,8 +27,6 @@ const OVERLAY_PALETTE = {
     "--sg-btn-border": "#cfd4da",
     "--sg-btn-hover": "#f0f2f5",
     "--sg-shadow": "0 16px 48px rgba(16, 24, 40, .3)",
-    "--sg-banner-sat": "72%",
-    "--sg-banner-light": "46%"
   },
   dark: {
     "--sg-panel-bg": "#171a20",
@@ -39,8 +39,6 @@ const OVERLAY_PALETTE = {
     "--sg-btn-border": "#363c47",
     "--sg-btn-hover": "#242933",
     "--sg-shadow": "0 16px 48px rgba(0, 0, 0, .62)",
-    "--sg-banner-sat": "64%",
-    "--sg-banner-light": "38%"
   }
 };
 
@@ -54,22 +52,11 @@ const OVERLAY_ACCENTS = {
   slate: { light: "#475569", dark: "#94a3b8" }
 };
 
-const OVERLAY_FONTS = {
-  system: `-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei UI", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif`,
-  serif: `"Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", SimSun, Georgia, serif`,
-  mono: `ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, "Microsoft YaHei", monospace`
-};
-
-const OVERLAY_RADII = { sharp: "4px", soft: "14px", round: "22px" };
-
 // 全部规则只引用 var(--sg-*)，不含任何字面色值——换主题只是几次 setProperty，不重建 DOM。
 const OVERLAY_CSS = `
   /* all: initial 连继承属性（字体、行高、字距、颜色）一起挡掉。
      自定义属性不受 all 影响，所以 --sg-* 令牌仍能正常继承进来。 */
   :host { all: initial; }
-
-  @keyframes sg-scroll-0 { from { transform: translateX(-18%); } to { transform: translateX(18%); } }
-  @keyframes sg-scroll-1 { from { transform: translateX(18%); }  to { transform: translateX(-18%); } }
 
   .sg-panel {
     position: relative; z-index: 1;
@@ -97,7 +84,6 @@ const OVERLAY_CSS = `
   :host([data-kind="toast"]) .sg-title { font-size: 15px; margin-bottom: 4px; }
   :host([data-kind="toast"]) .sg-badge { margin-bottom: 8px; font-size: 11px; padding: 2px 8px; }
   :host([data-kind="toast"]) .sg-reason { font-size: 12px; }
-  :host([data-kind="toast"]) .sg-encourage { font-size: 12px; margin-bottom: 8px; }
   :host([data-kind="toast"]) .sg-video-info { margin-bottom: 10px; padding-top: 8px; }
   :host([data-kind="toast"]) .sg-btn { padding: 6px 12px; font-size: 12px; }
 
@@ -128,15 +114,6 @@ const OVERLAY_CSS = `
     font-size: 14px;
     line-height: 1.6;
   }
-
-  .sg-encourage {
-    margin: 0 0 14px;
-    color: var(--sg-accent);
-    font-family: var(--sg-font);
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .sg-encourage:empty { display: none; }
 
   .sg-video-info {
     margin: 0 0 20px;
@@ -175,10 +152,6 @@ const OVERLAY_CSS = `
 
   .sg-btn-home { border-color: transparent; background: var(--sg-accent); color: var(--sg-accent-contrast); }
   .sg-btn-home:hover:not(:disabled) { background: var(--sg-accent); filter: brightness(.92); }
-
-  @media (prefers-reduced-motion: reduce) {
-    .sg-banners * { animation: none !important; }
-  }
 `;
 
 function resolveOverlayScheme(uiTheme) {
@@ -210,8 +183,8 @@ function buildOverlayTokens(settings) {
     ...OVERLAY_PALETTE[scheme],
     "--sg-accent": accent,
     "--sg-accent-contrast": overlayContrastFor(accent),
-    "--sg-font": OVERLAY_FONTS[settings.uiFont] || OVERLAY_FONTS.system,
-    "--sg-radius": OVERLAY_RADII[settings.uiRadius] || OVERLAY_RADII.soft,
+    "--sg-font": OVERLAY_FONT,
+    "--sg-radius": "14px",
     "--sg-scrim": `rgba(${OVERLAY_SCRIM_RGB}, ${Math.min(100, Math.max(0, opacity)) / 100})`
   };
 }
