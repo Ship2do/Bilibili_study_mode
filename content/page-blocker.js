@@ -21,24 +21,31 @@ function setScrollLocked(locked, state) {
 
 function blockPage(rawResult, state) {
   const result = normalizeDecision(rawResult);
-  const overlay = ensureOverlay(state.settings.blockBannerEnabled, state.settings.blockBannerText);
+  const overlay = ensureOverlay(state.settings);
   if (!overlay) return;
 
   // 弹窗内部在 shadow root 里，document.querySelector 查不到，统一走 getOverlayRefs()
   const refs = getOverlayRefs();
   const metadata = result.metadata || {};
+  const videoKey = deriveVideoKey(result, state.lastVideoKey);
 
   if (refs) {
-    refs.title.textContent = getModeLabel(result.mode);
+    refs.badge.textContent = getModeLabel(result.mode);
+    refs.title.textContent = String(state.settings.blockTitleText || "").trim() || "已拦截";
     refs.reason.textContent = `原因：${getBlockReasonText(result)}`;
-    refs.videoInfo.textContent = `标题：${metadata.title || "未知"} | 分区：${metadata.tname || "未知"}`;
+    refs.encourage.textContent = pickEncouragement(state.settings.blockEncourageText, videoKey);
+
+    const showInfo = state.settings.blockShowVideoInfo !== false;
+    refs.videoInfo.hidden = !showInfo;
+    refs.videoInfo.textContent = showInfo
+      ? `标题：${metadata.title || "未知"} ｜ 分区：${metadata.tname || "未知"}`
+      : "";
   }
 
   showOverlay();
   setScrollLocked(true, state);
   pauseAllVideos();
 
-  const videoKey = deriveVideoKey(result, state.lastVideoKey);
   scheduleNotInterestedAttempt(videoKey, document, state);
 
   if (state.pauseTimer) clearInterval(state.pauseTimer);

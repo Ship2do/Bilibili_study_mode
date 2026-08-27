@@ -5,7 +5,20 @@ const RUNTIME_SETTINGS = {
   actionHideCover:          { type: "bool",   default: false },
   autoNotInterestedEnabled: { type: "bool",   default: false },
   blockBannerEnabled:       { type: "bool",   default: true },
-  blockBannerText:          { type: "string", default: "学习！" }
+  blockBannerText:          { type: "string", default: "学习！" },
+
+  // 外观：拦截界面的主题令牌由这些字段算出来
+  uiTheme:                  { type: "raw",    default: "auto" },
+  uiAccent:                 { type: "raw",    default: "crimson" },
+  uiFont:                   { type: "raw",    default: "system" },
+  uiRadius:                 { type: "raw",    default: "soft" },
+  blockBannerDensity:       { type: "raw",    default: 18 },
+  blockBannerSpeed:         { type: "raw",    default: 5 },
+  blockBannerHue:           { type: "raw",    default: 355 },
+  blockShowVideoInfo:       { type: "bool",   default: true },
+  blockTitleText:           { type: "raw",    default: "" },
+  blockEncourageText:       { type: "raw",    default: "" },
+  blockOpacity:             { type: "raw",    default: 97 }
 };
 
 function coerceRuntimeSetting(raw, spec) {
@@ -137,6 +150,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
     });
   }
 });
+
+// 主题设为「跟随系统」时，系统明暗切换要立刻反映到拦截界面上
+if (typeof matchMedia === "function") {
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (STATE.settings.uiTheme === "auto" && getOverlayRefs()) {
+      applyOverlayTheme(getOverlayRefs().host, STATE.settings);
+    }
+  });
+}
 
 const init = () => {
   refreshRuntimeSettings().finally(() => {

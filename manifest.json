@@ -28,6 +28,7 @@
       ],
       "js": [
         "content/utils.js",
+        "content/overlay-theme.js",
         "content/overlay.js",
         "content/live-parser.js",
         "content/video-groups.js",
