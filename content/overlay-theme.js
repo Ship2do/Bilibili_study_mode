@@ -82,7 +82,24 @@ const OVERLAY_CSS = `
     box-shadow: var(--sg-shadow);
     font-family: var(--sg-font);
     text-align: left;
+    /* toast 模式下宿主整体 pointer-events: none 以便页面可点，面板本身要收回可点 */
+    pointer-events: auto;
   }
+
+  /* card：页面仍可见但整层拦住点击，面板浮在毛玻璃背板上 */
+  :host([data-kind="card"]) { backdrop-filter: blur(8px); }
+
+  /* toast：顶部提示条，不遮挡页面 */
+  :host([data-kind="toast"]) .sg-panel {
+    width: min(420px, 92vw);
+    padding: 14px 16px;
+  }
+  :host([data-kind="toast"]) .sg-title { font-size: 15px; margin-bottom: 4px; }
+  :host([data-kind="toast"]) .sg-badge { margin-bottom: 8px; font-size: 11px; padding: 2px 8px; }
+  :host([data-kind="toast"]) .sg-reason { font-size: 12px; }
+  :host([data-kind="toast"]) .sg-encourage { font-size: 12px; margin-bottom: 8px; }
+  :host([data-kind="toast"]) .sg-video-info { margin-bottom: 10px; padding-top: 8px; }
+  :host([data-kind="toast"]) .sg-btn { padding: 6px 12px; font-size: 12px; }
 
   .sg-badge {
     display: inline-block;
@@ -152,6 +169,9 @@ const OVERLAY_CSS = `
   .sg-btn:active:not(:disabled) { transform: scale(.98); }
   .sg-btn:disabled { opacity: .5; cursor: not-allowed; }
   .sg-btn:focus-visible { outline: 2px solid var(--sg-accent); outline-offset: 2px; }
+
+  .sg-btn[hidden] { display: none; }
+  .sg-btn-continue { color: var(--sg-text-muted); }
 
   .sg-btn-home { border-color: transparent; background: var(--sg-accent); color: var(--sg-accent-contrast); }
   .sg-btn-home:hover:not(:disabled) { background: var(--sg-accent); filter: brightness(.92); }

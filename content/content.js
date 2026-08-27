@@ -18,7 +18,15 @@ const RUNTIME_SETTINGS = {
   blockShowVideoInfo:       { type: "bool",   default: true },
   blockTitleText:           { type: "raw",    default: "" },
   blockEncourageText:       { type: "raw",    default: "" },
-  blockOpacity:             { type: "raw",    default: 97 }
+  blockOpacity:             { type: "raw",    default: 97 },
+
+  // 拦截强度：后台已按 schema 归一化过，内容脚本原样取用即可
+  blockPresentation:        { type: "raw",    default: "overlay" },
+  blockAllowContinue:       { type: "bool",   default: false },
+  blockContinueDelaySec:    { type: "raw",    default: 10 },
+  blockAutoDismissSec:      { type: "raw",    default: 0 },
+  blockScrollLock:          { type: "bool",   default: true },
+  blockPauseVideo:          { type: "bool",   default: true }
 };
 
 function coerceRuntimeSetting(raw, spec) {
@@ -47,7 +55,11 @@ const STATE = {
   cardObserver: null,
   decisionCache: new Map(),
   settings: defaultRuntimeSettings(),
-  notInterestedHandled: new Set()
+  notInterestedHandled: new Set(),
+  // 「继续观看」/ 倒计时放行过的视频
+  bypass: new Map(),
+  autoDismissTimer: null,
+  continueTimer: null
 };
 
 async function refreshRuntimeSettings() {
@@ -141,8 +153,11 @@ chrome.storage.onChanged.addListener((changes, area) => {
     STATE.lastVideoKey = "";
     STATE.requestId++;
     STATE.notInterestedHandled.clear();
+    const hadContinue = STATE.settings.blockAllowContinue === true;
     // 必须先取到新设置再重新判定，否则本次拦截用的还是旧的横幅文案／动作配置。
     refreshRuntimeSettings().finally(() => {
+      // 关掉「继续观看」后，之前放行过的视频应该重新受管
+      if (hadContinue && STATE.settings.blockAllowContinue !== true) STATE.bypass.clear();
       evaluateCurrentPage();
       if (STATE.settings.actionHideCover) { resetFiltering(); return; }
       STATE.decisionCache.clear();
