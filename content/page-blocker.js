@@ -24,16 +24,17 @@ function blockPage(rawResult, state) {
   const overlay = ensureOverlay(state.settings.blockBannerEnabled, state.settings.blockBannerText);
   if (!overlay) return;
 
-  const titleEl = overlay.querySelector("h1");
-  const reasonEl = overlay.querySelector(".sg-reason");
-  const videoInfoEl = overlay.querySelector(".sg-video-info");
+  // 弹窗内部在 shadow root 里，document.querySelector 查不到，统一走 getOverlayRefs()
+  const refs = getOverlayRefs();
   const metadata = result.metadata || {};
 
-  if (titleEl) titleEl.textContent = getModeLabel(result.mode);
-  if (reasonEl) reasonEl.textContent = `原因：${getBlockReasonText(result)}`;
-  if (videoInfoEl) videoInfoEl.textContent = `标题：${metadata.title || "未知"} | 分区：${metadata.tname || "未知"}`;
+  if (refs) {
+    refs.title.textContent = getModeLabel(result.mode);
+    refs.reason.textContent = `原因：${getBlockReasonText(result)}`;
+    refs.videoInfo.textContent = `标题：${metadata.title || "未知"} | 分区：${metadata.tname || "未知"}`;
+  }
 
-  overlay.style.display = "flex";
+  showOverlay();
   setScrollLocked(true, state);
   pauseAllVideos();
 
@@ -46,8 +47,7 @@ function blockPage(rawResult, state) {
 }
 
 function unblockPage(state) {
-  const overlay = document.getElementById(OVERLAY_ID);
-  if (overlay) overlay.style.display = "none";
+  hideOverlay();
   if (state.pauseTimer) { clearInterval(state.pauseTimer); state.pauseTimer = null; }
   setScrollLocked(false, state);
   state.blocked = false;

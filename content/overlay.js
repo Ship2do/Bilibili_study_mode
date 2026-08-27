@@ -73,11 +73,14 @@ function buildBanners(text) {
   return container;
 }
 
-function injectBannerStyles() {
-  if (document.getElementById("sg-style")) return;
-  const style = document.createElement("style");
-  style.id = "sg-style";
-  style.textContent = `
+// 拦截界面整体挂在 shadow root 里，这段样式随之注入 shadow，不再污染B站页面，
+// 也不会被B站的全局重置样式（* {} / button {} / h1 {}）反过来污染。
+function overlayStyleText() {
+  return `
+    /* all: initial 连继承属性（字体、行高、字距、颜色）一起挡掉，
+       这是纯 class 前缀方案做不到的。宿主自身的定位样式写在内联，优先级更高不受影响。
+       自定义属性不受 all 影响，所以 --sg-* 令牌仍能正常继承进来。 */
+    :host { all: initial; }
     @keyframes sg-scroll-0 {
       from { transform: translateX(-18%); }
       to   { transform: translateX(18%); }
@@ -135,7 +138,6 @@ function injectBannerStyles() {
     }
     .sg-btn-opt:hover { background: #2a1010; border-color: #773333; }
   `;
-  document.head.appendChild(style);
 }
 
 function bannerSignature(bannerEnabled, bannerText) {
@@ -143,32 +145,45 @@ function bannerSignature(bannerEnabled, bannerText) {
 }
 
 // 横幅只在文案/开关变化时重建，避免设置改完必须刷新页面才生效。
-function applyBanners(overlay, bannerEnabled, bannerText, signature) {
-  overlay.dataset.sgBanner = signature;
-  const existing = overlay.querySelector(".sg-banners");
+function applyBanners(host, root, bannerEnabled, bannerText, signature) {
+  host.dataset.sgBanner = signature;
+  const existing = root.querySelector(".sg-banners");
   if (existing) existing.remove();
   if (bannerEnabled === false) return;
-  overlay.insertBefore(buildBanners(bannerText || "学习！"), overlay.firstChild);
+  root.insertBefore(buildBanners(bannerText || "学习！"), root.firstChild);
 }
 
-function ensureOverlay(bannerEnabled, bannerText) {
-  const signature = bannerSignature(bannerEnabled, bannerText);
-  let overlay = document.getElementById(OVERLAY_ID);
-  if (overlay) {
-    if (overlay.dataset.sgBanner !== signature) applyBanners(overlay, bannerEnabled, bannerText, signature);
-    return overlay;
-  }
+// 拦截界面的所有内部元素引用集中在这里。外部（page-blocker）只通过 getOverlayRefs()
+// 拿引用，不再直接查弹窗内部 DOM——shadow root 里的元素用 document.querySelector 是
+// 查不到的，集中一处也便于将来改结构。
+let overlayRefs = null;
 
-  injectBannerStyles();
-
-  overlay = document.createElement("div");
-  overlay.id = OVERLAY_ID;
-  overlay.style.cssText = `
-    position: fixed; inset: 0; z-index: 2147483647; display: none;
-    align-items: center; justify-content: center;
-    background: rgba(6, 1, 1, 0.97);
-    font-family: ${PIXEL_FONT}; color: #fff;
+function createOverlay() {
+  const host = document.createElement("div");
+  host.id = OVERLAY_ID;
+  // 定位样式留在宿主的内联样式上：内联优先级高于 shadow 里的 :host { all: initial }，
+  // 也让 page-blocker 继续用 host.style.display 控制显隐。
+  //
+  // 每条都带 !important：shadow root 保护的是内部元素，宿主本身仍是页面 DOM 里的一个
+  // div，会被B站形如 `div { background: ... !important }` 的全局规则击穿——实测过，
+  // 遮罩底色会整个消失。内联 !important 在层叠里优先级最高，页面的 !important 也压不过。
+  host.style.cssText = `
+    position: fixed !important; inset: 0 !important;
+    z-index: 2147483647 !important; display: none !important;
+    align-items: center !important; justify-content: center !important;
+    margin: 0 !important; padding: 0 !important; border: 0 !important;
+    background: rgba(6, 1, 1, 0.97) !important;
+    font-family: ${PIXEL_FONT} !important; color: #fff !important;
+    pointer-events: auto !important; visibility: visible !important;
+    max-width: none !important; max-height: none !important;
+    transform: none !important; filter: none !important; opacity: 1 !important;
   `;
+
+  const root = host.attachShadow({ mode: "open" });
+
+  const style = document.createElement("style");
+  style.textContent = overlayStyleText();
+  root.appendChild(style);
 
   const panel = document.createElement("div");
   panel.className = "sg-panel";
@@ -200,9 +215,34 @@ function ensureOverlay(bannerEnabled, bannerText) {
 
   actions.append(homeBtn, optBtn);
   panel.append(title, reason, videoInfo, actions);
-  overlay.append(panel);
-  applyBanners(overlay, bannerEnabled, bannerText, signature);
-  (document.documentElement || document.body)?.appendChild(overlay);
+  root.appendChild(panel);
+  (document.documentElement || document.body)?.appendChild(host);
 
-  return overlay;
+  return { host, root, style, panel, title, reason, videoInfo, actions, homeBtn, optBtn };
+}
+
+function getOverlayRefs() {
+  return overlayRefs;
+}
+
+// 显隐必须走 setProperty(..., "important")：直接赋值 style.display 会把上面设的
+// !important 标志抹掉，页面的 `div { display: ... !important }` 就又能压过来了。
+function showOverlay() {
+  if (overlayRefs) overlayRefs.host.style.setProperty("display", "flex", "important");
+}
+
+function hideOverlay() {
+  const host = overlayRefs ? overlayRefs.host : document.getElementById(OVERLAY_ID);
+  if (host) host.style.setProperty("display", "none", "important");
+}
+
+function ensureOverlay(bannerEnabled, bannerText) {
+  // 宿主可能被B站的页面重绘摘掉，isConnected 比按 id 查更可靠
+  if (!overlayRefs || !overlayRefs.host.isConnected) overlayRefs = createOverlay();
+
+  const signature = bannerSignature(bannerEnabled, bannerText);
+  if (overlayRefs.host.dataset.sgBanner !== signature) {
+    applyBanners(overlayRefs.host, overlayRefs.root, bannerEnabled, bannerText, signature);
+  }
+  return overlayRefs.host;
 }
