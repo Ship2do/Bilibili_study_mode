@@ -46,27 +46,10 @@ function normalizeSettings(raw) {
   return ensureAtLeastOneAction(base);
 }
 
+// DEFAULT_SETTINGS 是浅冻结的，structuredClone 返回可写深拷贝，
+// 调用方改返回值里的数组也不会污染默认值。
 function cloneDefaultSettings() {
-  return {
-    mode: DEFAULT_SETTINGS.mode,
-    actionBlockVideo: DEFAULT_SETTINGS.actionBlockVideo,
-    actionHideCover: DEFAULT_SETTINGS.actionHideCover,
-    blockBannerEnabled: DEFAULT_SETTINGS.blockBannerEnabled,
-    blockBannerText: DEFAULT_SETTINGS.blockBannerText,
-    allowKeywords: [...DEFAULT_SETTINGS.allowKeywords],
-    blockKeywords: [...DEFAULT_SETTINGS.blockKeywords],
-    aiPreFilterBlockKeywords: DEFAULT_SETTINGS.aiPreFilterBlockKeywords,
-    aiApiUrl: DEFAULT_SETTINGS.aiApiUrl,
-    aiApiKey: DEFAULT_SETTINGS.aiApiKey,
-    aiModel: DEFAULT_SETTINGS.aiModel,
-    aiPrompt: DEFAULT_SETTINGS.aiPrompt,
-    aiRequestTimeoutMs: DEFAULT_SETTINGS.aiRequestTimeoutMs,
-    autoNotInterestedEnabled: DEFAULT_SETTINGS.autoNotInterestedEnabled,
-    timeStrategyEnabled: DEFAULT_SETTINGS.timeStrategyEnabled,
-    timeRules: [],
-    focusLockEnabled: DEFAULT_SETTINGS.focusLockEnabled,
-    focusLockPasswordHash: ""
-  };
+  return structuredClone(DEFAULT_SETTINGS);
 }
 
 function toPublicSettings(settings) {

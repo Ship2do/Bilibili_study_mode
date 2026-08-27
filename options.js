@@ -1,38 +1,15 @@
-const DEFAULT_AI_PROMPT_TEMPLATE = [
-  "标题为{{title}}的视频，分区是{{partition}}，标签是{{tags}}，请你判断是否为娱乐类视频。"
-].join("\n");
-
-const DEFAULT_ALLOW_KEYWORDS = [
-  "学习", "知识", "科普", "课程", "公开课", "教育",
-  "数学", "英语", "编程", "科学", "考研", "四六级"
-];
-
-const DEFAULT_BLOCK_KEYWORDS = [
-  "游戏", "手游", "电竞", "娱乐", "搞笑", "鬼畜", "整活",
-  "抽卡", "直播", "明星", "综艺", "追番", "番剧",
-  "二次元", "舞蹈", "音乐", "vlog"
-];
-
-const DEFAULT_SETTINGS = {
-  mode: "strong",
-  actionBlockVideo: true,
-  actionHideCover: false,
-  blockBannerEnabled: true,
-  blockBannerText: "学习！",
-  allowKeywords: DEFAULT_ALLOW_KEYWORDS,
-  blockKeywords: DEFAULT_BLOCK_KEYWORDS,
-  aiPreFilterBlockKeywords: true,
-  aiApiUrl: "",
-  aiApiKey: "",
-  aiModel: "",
-  aiPrompt: DEFAULT_AI_PROMPT_TEMPLATE,
-  aiRequestTimeoutMs: 12000,
-  autoNotInterestedEnabled: false,
-  timeStrategyEnabled: false,
-  timeRules: [],
-  focusLockEnabled: false,
-  focusLockHasPassword: false
-};
+// DEFAULT_SETTINGS / DEFAULT_AI_PROMPT_TEMPLATE 等常量来自 shared/constants.js，
+// 该文件在 options.html 里先于本文件加载——这里不要再声明同名 const，
+// 否则同一全局词法环境重复声明会让整个 options.js 抛 SyntaxError。
+//
+// 设置页面对的是 toPublicSettings() 的形状：没有 focusLockPasswordHash，
+// 取而代之的是布尔的 focusLockHasPassword。
+const UI_DEFAULTS = (() => {
+  const defaults = structuredClone(DEFAULT_SETTINGS);
+  delete defaults.focusLockPasswordHash;
+  defaults.focusLockHasPassword = false;
+  return defaults;
+})();
 
 const DAY_OPTIONS = [
   { value: 0, label: "周日" }, { value: 1, label: "周一" },
@@ -87,7 +64,7 @@ const saveButton = document.getElementById("save");
 const resetButton = document.getElementById("reset");
 const statusEl = document.getElementById("status");
 
-let currentSettings = { ...DEFAULT_SETTINGS };
+let currentSettings = structuredClone(UI_DEFAULTS);
 
 function showStatus(text) { statusEl.textContent = text; }
 
@@ -343,8 +320,8 @@ function readTimeRulesFromDom() {
 // ── Form fill / build ──
 
 function fillForm(settings) {
-  const source = settings || DEFAULT_SETTINGS;
-  currentSettings = { ...DEFAULT_SETTINGS, ...source };
+  const source = settings || UI_DEFAULTS;
+  currentSettings = { ...structuredClone(UI_DEFAULTS), ...source };
 
   setSelectedMode(currentSettings.mode);
   actionBlockVideoInput.checked = currentSettings.actionBlockVideo !== false;
