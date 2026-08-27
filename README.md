@@ -54,6 +54,7 @@ options.html + options.js    # 详细设置页（含占位符按钮）
 
 - 支持 `live.bilibili.com` 上的娱乐性质直播
 - 直播间元数据通过B站直播API获取（标题、分区、标签、主播）
+- 直播卡片链接形如 `https://live.bilibili.com/<房间号>`（路径中不含 `/live/`），链接收集按主机名匹配
 
 ### 时段策略
 

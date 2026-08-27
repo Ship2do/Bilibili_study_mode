@@ -9,6 +9,7 @@
   "host_permissions": [
     "https://www.bilibili.com/*",
     "https://search.bilibili.com/*",
+    "https://live.bilibili.com/*",
     "https://api.bilibili.com/*",
     "https://api.live.bilibili.com/*",
     "<all_urls>"
@@ -20,7 +21,8 @@
     {
       "matches": [
         "https://www.bilibili.com/*",
-        "https://search.bilibili.com/*"
+        "https://search.bilibili.com/*",
+        "https://live.bilibili.com/*"
       ],
       "js": [
         "shared/constants.js",

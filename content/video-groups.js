@@ -2,6 +2,10 @@ const HIDDEN_ATTR = "data-study-guard-hidden";
 const HIDDEN_KEY_ATTR = "data-study-guard-video-key";
 const HIDDEN_PREV_DISPLAY_ATTR = "data-study-guard-prev-display";
 
+// 直播间的规范链接是 https://live.bilibili.com/<房间号>，路径里并没有 "/live/"，
+// 因此必须单独匹配主机名，否则首页/推荐流里的直播卡片一个都收集不到。
+const VIDEO_LINK_SELECTOR = "a[href*='/video/'], a[href*='live.bilibili.com'], a[href*='/live/']";
+
 const CARD_CONTAINER_SELECTORS = [
   ".bili-video-card", ".bili-video-card__wrap", ".feed-card", ".floor-single-card",
   ".video-page-card-small", ".video-card", ".card-box", ".recommend-item", ".rec-item",
@@ -13,7 +17,7 @@ function isOverlayElement(node) {
 }
 
 function collectVideoGroups() {
-  const links = document.querySelectorAll("a[href*='/video/'], a[href*='/live/']");
+  const links = document.querySelectorAll(VIDEO_LINK_SELECTOR);
   const groups = new Map();
 
   for (const link of links) {
@@ -21,7 +25,7 @@ function collectVideoGroups() {
     const href = link.getAttribute("href") || link.href;
     if (!href) continue;
 
-    const isLive = /live\.bilibili\.com/.test(href) || /\/live\//.test(href);
+    const isLive = /live\.bilibili\.com/.test(href) || /\/live\/\d/.test(href);
     const videoId = isLive ? parseLiveRoomId(href) : parseVideoId(href);
     if (!videoId) continue;
 
@@ -37,7 +41,7 @@ function collectVideoGroups() {
 }
 
 function countVideoLinks(element) {
-  return element instanceof HTMLElement ? element.querySelectorAll("a[href*='/video/'], a[href*='/live/']").length : 0;
+  return element instanceof HTMLElement ? element.querySelectorAll(VIDEO_LINK_SELECTOR).length : 0;
 }
 
 function getContainerMeta(element) {
