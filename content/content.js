@@ -1,3 +1,25 @@
+// 内容脚本会用到的设置字段。加新字段只改这张表，refreshRuntimeSettings 不用动。
+// bool 的默认值同时决定了取值语义：默认 true 的字段用「不等于 false」，
+// 默认 false 的字段用「严格等于 true」——与后台 normalizeSettings 的兜底保持一致。
+const RUNTIME_SETTINGS = {
+  actionHideCover:          { type: "bool",   default: false },
+  autoNotInterestedEnabled: { type: "bool",   default: false },
+  blockBannerEnabled:       { type: "bool",   default: true },
+  blockBannerText:          { type: "string", default: "学习！" }
+};
+
+function coerceRuntimeSetting(raw, spec) {
+  if (spec.type === "bool") return spec.default === true ? raw !== false : raw === true;
+  if (spec.type === "string") return String(raw || spec.default);
+  return raw === undefined ? spec.default : raw;
+}
+
+function defaultRuntimeSettings() {
+  const result = {};
+  for (const [key, spec] of Object.entries(RUNTIME_SETTINGS)) result[key] = spec.default;
+  return result;
+}
+
 const STATE = {
   lastHref: location.href,
   lastVideoKey: "",
@@ -11,22 +33,16 @@ const STATE = {
   cardScanQueued: false,
   cardObserver: null,
   decisionCache: new Map(),
-  settings: { actionHideCover: false, autoNotInterestedEnabled: false, blockBannerEnabled: true, blockBannerText: "学习！" },
+  settings: defaultRuntimeSettings(),
   notInterestedHandled: new Set()
 };
 
 async function refreshRuntimeSettings() {
   const response = await sendMessage({ type: "GET_SETTINGS" });
-  if (response?.ok && response.settings && typeof response.settings === "object") {
-    STATE.settings.actionHideCover = response.settings.actionHideCover === true;
-    STATE.settings.autoNotInterestedEnabled = response.settings.autoNotInterestedEnabled === true;
-    STATE.settings.blockBannerEnabled = response.settings.blockBannerEnabled !== false;
-    STATE.settings.blockBannerText = String(response.settings.blockBannerText || "学习！");
-  } else {
-    STATE.settings.actionHideCover = false;
-    STATE.settings.autoNotInterestedEnabled = false;
-    STATE.settings.blockBannerEnabled = true;
-    STATE.settings.blockBannerText = "学习！";
+  const ok = response?.ok && response.settings && typeof response.settings === "object";
+  const source = ok ? response.settings : {};
+  for (const [key, spec] of Object.entries(RUNTIME_SETTINGS)) {
+    STATE.settings[key] = coerceRuntimeSetting(source[key], spec);
   }
 }
 
