@@ -26,6 +26,7 @@ function seededRandom(seed) {
 
 function buildBanners(text) {
   const container = document.createElement("div");
+  container.className = "sg-banners";
   container.style.cssText = `
     position: absolute; inset: 0; overflow: hidden;
     pointer-events: none; z-index: 0;
@@ -137,9 +138,26 @@ function injectBannerStyles() {
   document.head.appendChild(style);
 }
 
+function bannerSignature(bannerEnabled, bannerText) {
+  return `${bannerEnabled !== false ? "1" : "0"}:${bannerText || "学习！"}`;
+}
+
+// 横幅只在文案/开关变化时重建，避免设置改完必须刷新页面才生效。
+function applyBanners(overlay, bannerEnabled, bannerText, signature) {
+  overlay.dataset.sgBanner = signature;
+  const existing = overlay.querySelector(".sg-banners");
+  if (existing) existing.remove();
+  if (bannerEnabled === false) return;
+  overlay.insertBefore(buildBanners(bannerText || "学习！"), overlay.firstChild);
+}
+
 function ensureOverlay(bannerEnabled, bannerText) {
+  const signature = bannerSignature(bannerEnabled, bannerText);
   let overlay = document.getElementById(OVERLAY_ID);
-  if (overlay) return overlay;
+  if (overlay) {
+    if (overlay.dataset.sgBanner !== signature) applyBanners(overlay, bannerEnabled, bannerText, signature);
+    return overlay;
+  }
 
   injectBannerStyles();
 
@@ -151,10 +169,6 @@ function ensureOverlay(bannerEnabled, bannerText) {
     background: rgba(6, 1, 1, 0.97);
     font-family: ${PIXEL_FONT}; color: #fff;
   `;
-
-  if (bannerEnabled !== false) {
-    overlay.appendChild(buildBanners(bannerText || "学习！"));
-  }
 
   const panel = document.createElement("div");
   panel.className = "sg-panel";
@@ -187,6 +201,7 @@ function ensureOverlay(bannerEnabled, bannerText) {
   actions.append(homeBtn, optBtn);
   panel.append(title, reason, videoInfo, actions);
   overlay.append(panel);
+  applyBanners(overlay, bannerEnabled, bannerText, signature);
   (document.documentElement || document.body)?.appendChild(overlay);
 
   return overlay;

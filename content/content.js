@@ -112,8 +112,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
     STATE.lastVideoKey = "";
     STATE.requestId++;
     STATE.notInterestedHandled.clear();
-    evaluateCurrentPage();
-    refreshRuntimeSettings().then(() => {
+    // 必须先取到新设置再重新判定，否则本次拦截用的还是旧的横幅文案／动作配置。
+    refreshRuntimeSettings().finally(() => {
+      evaluateCurrentPage();
       if (STATE.settings.actionHideCover) { resetFiltering(); return; }
       STATE.decisionCache.clear();
       restoreHiddenCards();
