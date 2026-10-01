@@ -55,6 +55,16 @@ function applySettingsToView(settings) {
   }
   quickModeSelect.value = normalizeMode(settings && settings.mode);
 
+  // 总开关关闭时置灰其余分区（样式类），提示文案换成「怎么恢复」
+  const guardOff = !!(settings && settings.masterEnabled === false);
+  document.body.classList.toggle("guard-off", guardOff);
+  const masterHint = document.getElementById("masterHint");
+  if (masterHint) {
+    masterHint.textContent = guardOff
+      ? "守护已暂停，所有视频放行"
+      : "关闭后所有判定与拦截暂停";
+  }
+
   const theme = ["auto", "light", "dark"].includes(settings && settings.uiTheme) ? settings.uiTheme : "auto";
   for (const input of themeInputs) input.checked = input.value === theme;
   applyTheme(settings || {});
@@ -124,6 +134,10 @@ for (const input of toggles) {
     if (!result.ok) {
       applySettingsToView(previousSettings);
       showStatus(result.error || "保存失败");
+      return;
+    }
+    if (key === "masterEnabled") {
+      showStatus(nextValue ? "守护已开启" : "守护已暂停");
       return;
     }
     showStatus("已保存");

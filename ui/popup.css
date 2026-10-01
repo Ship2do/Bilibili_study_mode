@@ -31,6 +31,15 @@ body { width: 320px; font-size: 13px; }
 }
 .name { font-size: 13px; font-weight: 500; }
 
+/* ── 总开关 ──
+ * 关闭时其余分区置灰且不可点，让「守护没在工作」一眼可见；
+ * 开关本身、操作按钮和状态行保持可用。 */
+.hero .feature { padding: 2px 0 0; }
+.hero .name { font-size: 14px; font-weight: 600; }
+.hero-hint { margin: 4px 0 0; color: var(--text-muted); font-size: 11px; }
+body.guard-off .hero-hint { color: var(--danger); }
+body.guard-off .wrap > .section:not(.hero) { opacity: .45; pointer-events: none; }
+
 .mode-select { width: 100%; }
 
 /* ── 主题三态切换（跟随系统 / 亮 / 暗） ── */

@@ -65,7 +65,7 @@ async function checkVideosInBatch(videoIds) {
 }
 
 async function filterVideoCards(state) {
-  if (!state.settings.actionHideCover) {
+  if (!state.settings.masterEnabled || !state.settings.actionHideCover) {
     restoreHiddenCards();
     state.decisionCache.clear();
     return;

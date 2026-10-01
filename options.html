@@ -14,6 +14,21 @@
       <p class="intro">配置判定模式、动作、AI Prompt、拦截界面、时段策略和密码锁。</p>
 
       <section class="panel">
+        <!-- 总开关 -->
+        <div class="section">
+          <h2 class="section-title">总开关</h2>
+          <div class="item">
+            <label class="row">
+              <input id="masterEnabled" type="checkbox" />
+              <span>
+                启用学习守护
+                <span class="tip">ⓘ<span class="tip-text">关闭后判定与拦截全部暂停，包括时段策略的「完全禁止」</span></span>
+              </span>
+            </label>
+          </div>
+          <p class="warn">关闭总开关会放行所有视频，是最彻底的降级：开启专注密码锁后，关闭需要输入密码，重新开启不需要。</p>
+        </div>
+
         <!-- 判定模式与动作 -->
         <div class="section">
           <h2 class="section-title">判定模式</h2>

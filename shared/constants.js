@@ -77,6 +77,9 @@ function defaultsFromSchema(schema) {
 }
 
 const LEGACY_DEFAULTS = {
+  // 总开关。刻意不叫 enabled：老版本存储里曾有 enabled 字段（已迁移为
+  // actionBlockVideo 的兜底），复用会让那批用户的旧值被误读成「总开关关闭」。
+  masterEnabled: true,
   mode: "strong",
   actionBlockVideo: true,
   actionHideCover: false,

@@ -113,7 +113,21 @@ async function evaluateByMode(metadata, settings) {
   return evaluateStrongMode(metadata, settings);
 }
 
+function disabledDecision() {
+  return {
+    allowed: true, hideCard: false, reason: "学习守护已暂停",
+    blockedBy: "", mode: "",
+    matchedAllowKeywords: [], matchedBlockKeywords: [],
+    ai: createDefaultAiResult(),
+    metadata: { title: "", tname: "", tags: [] }
+  };
+}
+
 async function checkVideoWithSettings(videoId, settings, context) {
+  // 总开关关闭时短路：不取元数据、不查时段规则（含「完全禁止」时段），一律放行。
+  // 不写缓存——开关切回后不应读到这批放行结果。
+  if (settings.masterEnabled === false) return disabledDecision();
+
   const normalizedContext = normalizeContext(context);
   const videoKey = videoKeyFromId(videoId);
   if (!videoKey) return failedDecision("未识别到视频ID");

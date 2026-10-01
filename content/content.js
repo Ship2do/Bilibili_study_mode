@@ -2,6 +2,8 @@
 // bool 的默认值同时决定了取值语义：默认 true 的字段用「不等于 false」，
 // 默认 false 的字段用「严格等于 true」——与后台 normalizeSettings 的兜底保持一致。
 const RUNTIME_SETTINGS = {
+  // 总开关：关掉后页面判定与封面扫描全部停摆，恢复交给 evaluateCurrentPage
+  masterEnabled:             { type: "bool",   default: true },
   actionHideCover:          { type: "bool",   default: false },
   autoNotInterestedEnabled: { type: "bool",   default: false },
   blockBannerEnabled:       { type: "bool",   default: true },
@@ -67,13 +69,23 @@ async function refreshRuntimeSettings() {
 }
 
 function scheduleCardScan(delayMs) {
-  if (!STATE.settings.actionHideCover) return;
+  if (!STATE.settings.masterEnabled || !STATE.settings.actionHideCover) return;
   const delay = Number.isFinite(delayMs) ? Math.max(0, delayMs) : 180;
   if (STATE.cardScanTimer) clearTimeout(STATE.cardScanTimer);
   STATE.cardScanTimer = setTimeout(() => { STATE.cardScanTimer = null; filterVideoCards(STATE); }, delay);
 }
 
 async function evaluateCurrentPage() {
+  // 总开关关闭时本地直接解除拦截，不再向后台要判定；重新开启由
+  // storage 变更监听触发完整重判。lastVideoKey 清空，避免恢复后
+  // 因 key 相同被「页面没变」分支跳过。
+  if (!STATE.settings.masterEnabled) {
+    STATE.lastHref = location.href;
+    STATE.lastVideoKey = "";
+    unblockPage(STATE);
+    return;
+  }
+
   const videoId = parseVideoId(location.href);
   const liveId = !videoId ? parseLiveRoomId(location.href) : null;
   const currentId = videoId || liveId;
