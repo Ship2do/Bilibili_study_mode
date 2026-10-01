@@ -179,6 +179,8 @@ function isLessStrict(current, next) {
   // 关总开关 = 把拦截力度降为零，是最彻底的放水，与其他降级一样受密码锁保护；
   // 重新开启视为收紧，不需要密码。
   if (current.masterEnabled && !next.masterEnabled) return true;
+  // 关掉简洁首页 = 推荐流回归，与关掉隐藏封面同级的放水。
+  if (current.simpleHomeEnabled && !next.simpleHomeEnabled) return true;
   if (current.actionBlockVideo && !next.actionBlockVideo) return true;
   if (current.actionHideCover && !next.actionHideCover) return true;
   if (current.autoNotInterestedEnabled && !next.autoNotInterestedEnabled) return true;

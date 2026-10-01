@@ -32,6 +32,9 @@ const UI_SETTINGS_SCHEMA = Object.freeze({
   blockShowVideoInfo: { type: "bool", default: true },
 
   // ── 强度类 ──
+  // 简洁首页：把首页整个替换为居中搜索框。藏掉的是推荐流本身而非个别卡片，
+  // 属于强度类——锁定期关闭它要密码，开启不需要。
+  simpleHomeEnabled: { type: "bool", default: false },
   blockPresentation: { type: "enum", values: ["overlay", "card", "toast"], default: "overlay" },
   blockAllowContinue: { type: "bool", default: false },
   blockContinueDelaySec: { type: "int", min: 0, max: 60, default: 10 },

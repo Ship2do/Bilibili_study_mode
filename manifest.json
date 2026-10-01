@@ -27,6 +27,17 @@
         "https://live.bilibili.com/*"
       ],
       "js": [
+        "content/simple-mode.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.bilibili.com/*",
+        "https://search.bilibili.com/*",
+        "https://live.bilibili.com/*"
+      ],
+      "js": [
         "shared/banner.js",
         "content/utils.js",
         "content/overlay-theme.js",

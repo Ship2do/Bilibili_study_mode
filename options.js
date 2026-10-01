@@ -32,6 +32,7 @@ const TIME_RULE_MODE_OPTIONS = [
 const modeInputs = Array.from(document.querySelectorAll("input[name='mode']"));
 const modeAlert = document.getElementById("modeAlert");
 const masterEnabledInput = document.getElementById("masterEnabled");
+const simpleHomeEnabledInput = document.getElementById("simpleHomeEnabled");
 const actionBlockVideoInput = document.getElementById("actionBlockVideo");
 const actionHideCoverInput = document.getElementById("actionHideCover");
 const autoNotInterestedEnabledInput = document.getElementById("autoNotInterestedEnabled");
@@ -535,6 +536,7 @@ function fillForm(settings) {
 
   setSelectedMode(currentSettings.mode);
   masterEnabledInput.checked = currentSettings.masterEnabled !== false;
+  simpleHomeEnabledInput.checked = currentSettings.simpleHomeEnabled === true;
   actionBlockVideoInput.checked = currentSettings.actionBlockVideo !== false;
   actionHideCoverInput.checked = currentSettings.actionHideCover === true;
   autoNotInterestedEnabledInput.checked = currentSettings.autoNotInterestedEnabled === true;
@@ -682,6 +684,7 @@ function buildPayload() {
 
   const payload = {
     masterEnabled: masterEnabledInput.checked,
+    simpleHomeEnabled: simpleHomeEnabledInput.checked,
     uiTheme: uiThemeInput.value,
     uiAccent: getSelectedAccent(),
     mode, actionBlockVideo, actionHideCover,

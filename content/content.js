@@ -8,6 +8,10 @@ const RUNTIME_SETTINGS = {
   autoNotInterestedEnabled: { type: "bool",   default: false },
   blockBannerEnabled:       { type: "bool",   default: true },
   blockBannerText:          { type: "string", default: "学习！" },
+  // 简洁首页开启时，首页只剩 simple-mode.js 画的搜索框，
+  // 判定与卡片扫描在该路径下全部跳过（卡片还在 DOM 里但已 display:none，
+  // 不跳过会对着一堆不可见卡片白白调批量接口）
+  simpleHomeEnabled:        { type: "bool",   default: false },
 
   // 外观：拦截界面的主题令牌由这些字段算出来
   uiTheme:                  { type: "raw",    default: "auto" },
@@ -68,8 +72,12 @@ async function refreshRuntimeSettings() {
   }
 }
 
+function simpleHomeActive() {
+  return STATE.settings.simpleHomeEnabled === true && /^(\/|\/index\.html)$/.test(location.pathname);
+}
+
 function scheduleCardScan(delayMs) {
-  if (!STATE.settings.masterEnabled || !STATE.settings.actionHideCover) return;
+  if (!STATE.settings.masterEnabled || simpleHomeActive() || !STATE.settings.actionHideCover) return;
   const delay = Number.isFinite(delayMs) ? Math.max(0, delayMs) : 180;
   if (STATE.cardScanTimer) clearTimeout(STATE.cardScanTimer);
   STATE.cardScanTimer = setTimeout(() => { STATE.cardScanTimer = null; filterVideoCards(STATE); }, delay);
@@ -80,6 +88,14 @@ async function evaluateCurrentPage() {
   // storage 变更监听触发完整重判。lastVideoKey 清空，避免恢复后
   // 因 key 相同被「页面没变」分支跳过。
   if (!STATE.settings.masterEnabled) {
+    STATE.lastHref = location.href;
+    STATE.lastVideoKey = "";
+    unblockPage(STATE);
+    return;
+  }
+
+  // 简洁首页：整页已是搜索启动页，没有可判定的内容
+  if (simpleHomeActive()) {
     STATE.lastHref = location.href;
     STATE.lastVideoKey = "";
     unblockPage(STATE);
