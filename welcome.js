@@ -5,7 +5,7 @@
  * 但对新用户来说那是最大的体验陷阱，所以这里默认预选弱模式。这正是引导存在的意义。
  */
 
-const STEP_COUNT = 6;
+const STEP_COUNT = 7;
 
 // 每包 8~12 个词，覆盖常见学习场景
 const KEYWORD_PACKS = [
@@ -73,6 +73,8 @@ const focusLockEnabledInput = document.getElementById("focusLockEnabled");
 const newPasswordInput = document.getElementById("newPassword");
 const confirmPasswordInput = document.getElementById("confirmPassword");
 const passwordFields = document.getElementById("passwordFields");
+
+const simpleHomeEnabledInput = document.getElementById("simpleHomeEnabled");
 
 const trialList = document.getElementById("trialList");
 
@@ -292,6 +294,7 @@ function buildOnboardingPayload(choices) {
     mode,
     uiTheme: ["auto", "light", "dark"].includes(choices.uiTheme) ? choices.uiTheme : "auto",
     uiAccent: choices.uiAccent || "crimson",
+    simpleHomeEnabled: choices.simpleHomeEnabled === true,
     blockPresentation: ["overlay", "card", "toast"].includes(choices.blockPresentation)
       ? choices.blockPresentation : "overlay",
     blockBannerEnabled: choices.blockBannerEnabled !== false,
@@ -326,6 +329,7 @@ function collectChoices() {
     blockBannerText: blockBannerTextInput.value,
     blockBannerDensity: blockBannerDensityInput.value,
     blockBannerColor: getSelectedBannerColor(),
+    simpleHomeEnabled: simpleHomeEnabledInput.checked,
     focusLockEnabled: focusLockEnabledInput.checked,
     password: newPasswordInput.value,
     confirmPassword: confirmPasswordInput.value

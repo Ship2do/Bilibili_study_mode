@@ -65,8 +65,7 @@ body { display: grid; place-items: center; min-height: 100vh; padding: var(--s6)
 .count-line.is-warn { color: var(--warn); font-weight: 600; }
 
 /* ── 试跑结果 ── */
-.trial-list { display: grid; gap: var(--s2); }
-.trial-item {
+.trial-list { display: grid; gap: var(--s2); }.trial-item {
   display: flex; align-items: flex-start; gap: var(--s3);
   padding: var(--s3);
   border: 1px solid var(--border);
@@ -85,6 +84,15 @@ body { display: grid; place-items: center; min-height: 100vh; padding: var(--s6)
 .trial-body { min-width: 0; }
 .trial-title { font-size: 13px; font-weight: 600; }
 .trial-reason { margin-top: 2px; color: var(--text-sub); font-size: 12px; }
+
+/* ── 简洁首页预览 ── */
+.simple-preview-frame {
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+.simple-preview-frame img { display: block; width: 100%; }
 
 /* ── 底部导航 ── */
 .wizard-actions {
