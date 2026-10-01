@@ -129,8 +129,11 @@
 **专注密码锁与时段策略**
 <img src="preview/screenshot-5-lock.png" alt="密码锁">
 
-**首装引导，最后一步实地试跑**
+**首装引导：规则当场试跑，看效果选首页形态**
 <img src="preview/screenshot-6-onboarding.png" alt="引导流程">
+
+**简洁首页：刷无可刷，亮色暗色同样清爽**
+<img src="preview/screenshot-7-simple-home.png" alt="简洁首页">
 
 </details>
 
